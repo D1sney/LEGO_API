@@ -12,6 +12,10 @@ class Photo(Base):
     photo_url = Column(String, nullable=False)
     is_main = Column(Boolean, default=False)
 
-    # Связь с Set и Minifigure
-    sets = relationship("Set", back_populates="face_photo")
-    minifigures = relationship("Minifigure", back_populates="face_photo")
+    # Связи для фотографий, которые относятся к наборам или минифигуркам
+    set = relationship("Set", foreign_keys=[set_id], back_populates="photos")
+    minifigure = relationship("Minifigure", foreign_keys=[minifigure_id], back_populates="photos")
+    
+    # Обратные связи для face_photo (главная фотография набора/минифигурки)
+    sets = relationship("Set", foreign_keys="Set.face_photo_id", back_populates="face_photo")
+    minifigures = relationship("Minifigure", foreign_keys="Minifigure.face_photo_id", back_populates="face_photo")

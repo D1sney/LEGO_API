@@ -18,16 +18,13 @@ class Set(Base):
     # Связь с фотографией
     face_photo = relationship("Photo", foreign_keys=[face_photo_id], back_populates="sets")
     # Связь с минифигурками через Set_Minifigures
-    minifigures = relationship("Minifigure", secondary="set_minifigures", back_populates="sets")
-    # Связь с тегами через Set_Tags
-    tags = relationship("Tag", secondary="set_tags", back_populates="sets")
+    minifigures = relationship("Minifigure", secondary="set_minifigures", backref="sets")
+    # Связь с фотографиями наборов
+    photos = relationship("Photo", back_populates="set", foreign_keys="Photo.set_id")
+    # Обратная связь с тегами определена в модели Tag через backref="tag_items"
 
 class SetMinifigure(Base):
     __tablename__ = "set_minifigures"
 
     set_id = Column(Integer, ForeignKey("sets.set_id"), primary_key=True)
     minifigure_id = Column(String, ForeignKey("minifigures.minifigure_id"), primary_key=True)
-
-    # Связь с Set и Minifigure
-    set = relationship("Set", back_populates="minifigures")
-    minifigure = relationship("Minifigure", back_populates="sets")

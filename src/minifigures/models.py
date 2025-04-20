@@ -11,9 +11,8 @@ class Minifigure(Base):
     name = Column(String, unique=True, nullable=False)
     face_photo_id = Column(Integer, ForeignKey("photos.photo_id"), nullable=True)
 
-    # Связь с фотографией
+    # Связь с фотографией лица
     face_photo = relationship("Photo", foreign_keys=[face_photo_id], back_populates="minifigures")
-    # Связь с наборами через Set_Minifigures
-    sets = relationship("Set", secondary="set_minifigures", back_populates="minifigures")
-    # Связь с тегами через Minifigure_Tags
-    tags = relationship("Tag", secondary="minifigure_tags", back_populates="minifigures")
+    # Связь с фотографиями минифигурок
+    photos = relationship("Photo", back_populates="minifigure", foreign_keys="Photo.minifigure_id")
+    # Обратная связь с тегами определена в модели Tag через backref="tag_items"
