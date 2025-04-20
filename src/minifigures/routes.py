@@ -66,8 +66,8 @@ async def create_minifigure_form(
         default="Harry Potter, Gryffindor Robe",
         description="Название минифигурки"
     ),
-    face_photo_id: Optional[int] = Form(
-        default=None,
+    face_photo_id: str = Form(
+        default="",
         description="ID главного фото минифигурки (оставьте пустым для null)"
     ),
     db: Session = Depends(get_db)
@@ -124,8 +124,8 @@ async def update_minifigure_form(
         description="Название минифигурки",
         example="Harry Potter, Gryffindor Robe"
     ),
-    face_photo_id: Optional[int] = Form(
-        default=None,
+    face_photo_id: str = Form(
+        default="",
         description="ID главного фото минифигурки (оставьте пустым для null)"
     ),
     db: Session = Depends(get_db)

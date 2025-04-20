@@ -80,21 +80,29 @@ async def create_set_form(
         default=8999.99,
         description="Цена набора в рублях"
     ),
-    face_photo_id: Optional[int] = Form(
-        default=None,
+    face_photo_id: str = Form(
+        default="",
         description="ID главного фото набора (оставьте пустым для null)"
     ),
     db: Session = Depends(get_db)
 ):
-    set_data = SetCreate(
-        name=name,
-        piece_count=piece_count,
-        release_year=release_year,
-        theme=theme,
-        sub_theme=sub_theme,
-        price=price,
-        face_photo_id=face_photo_id
-    )
+    # Создаём словарь с данными из формы
+    data = {
+        "name": name,
+        "piece_count": piece_count,
+        "release_year": release_year,
+        "theme": theme,
+        "sub_theme": sub_theme,
+        "price": price,
+        "face_photo_id": face_photo_id
+    }
+    
+    # Передаём данные в SetCreate, которая обработает face_photo_id
+    try:
+        set_data = SetCreate(**data)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
     new_set = create_db_set(set_data, db)
     return new_set
 
@@ -155,8 +163,8 @@ async def update_set_form(
         default=None,
         description="Цена набора в рублях"
     ),
-    face_photo_id: Optional[int] = Form(
-        default=None,
+    face_photo_id: str = Form(
+        default="",
         description="ID главного фото набора (оставьте пустым для null)"
     ),
     db: Session = Depends(get_db)

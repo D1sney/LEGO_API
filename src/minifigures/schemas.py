@@ -1,5 +1,5 @@
 # src/minifigures/schemas.py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 class MinifigureBase(BaseModel):
@@ -9,12 +9,30 @@ class MinifigureBase(BaseModel):
     face_photo_id: Optional[int] = Field(None, description="ID главного фото минифигурки")
 
 class MinifigureCreate(MinifigureBase):
-    pass
+    @field_validator("face_photo_id", mode="before")
+    @classmethod
+    def parse_face_photo_id(cls, value):
+        if isinstance(value, str) and not value.strip():
+            return None
+        try:
+            return int(value) if value is not None else None
+        except (ValueError, TypeError):
+            raise ValueError("face_photo_id должен быть целым числом или пустым")
 
 class MinifigureUpdate(BaseModel):
     character_name: Optional[str] = Field(None, description="Имя персонажа", example="Гарри Поттер")
     name: Optional[str] = Field(None, description="Название минифигурки", example="Harry Potter, Gryffindor Robe")
     face_photo_id: Optional[int] = Field(None, description="ID главного фото минифигурки")
+    
+    @field_validator("face_photo_id", mode="before")
+    @classmethod
+    def parse_face_photo_id(cls, value):
+        if isinstance(value, str) and not value.strip():
+            return None
+        try:
+            return int(value) if value is not None else None
+        except (ValueError, TypeError):
+            raise ValueError("face_photo_id должен быть целым числом или пустым")
 
 class MinifigureResponse(MinifigureBase):
     class Config:

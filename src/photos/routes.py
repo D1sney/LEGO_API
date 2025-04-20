@@ -57,13 +57,13 @@ async def create_photo_form(
         default="https://example.com/images/hogwarts.jpg",
         description="URL фотографии"
     ),
-    set_id: Optional[int] = Form(
-        default=None,
+    set_id: str = Form(
+        default="",
         description="ID набора LEGO, к которому относится фото (оставьте пустым для null)",
         example=75968
     ),
-    minifigure_id: Optional[str] = Form(
-        default=None,
+    minifigure_id: str = Form(
+        default="",
         description="ID минифигурки LEGO, к которой относится фото (оставьте пустым для null)",
         example="hp150"
     ),
@@ -120,13 +120,13 @@ async def update_photo_form(
         description="URL фотографии",
         example="https://example.com/images/hogwarts.jpg"
     ),
-    set_id: Optional[int] = Form(
-        default=None,
+    set_id: str = Form(
+        default="",
         description="ID набора LEGO, к которому относится фото (оставьте пустым для null)",
         example=75968
     ),
-    minifigure_id: Optional[str] = Form(
-        default=None,
+    minifigure_id: str = Form(
+        default="",
         description="ID минифигурки LEGO, к которой относится фото (оставьте пустым для null)",
         example="hp150"
     ),
