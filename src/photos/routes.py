@@ -1,6 +1,7 @@
 # src/photos/routes.py
 from fastapi import status, HTTPException, Depends, APIRouter, Form
 from sqlalchemy.orm import Session
+from typing import Optional
 from src.photos.schemas import PhotoCreate, PhotoResponse, PhotoUpdate, PhotoDelete
 from src.database import get_db
 from src.photos.db import (
@@ -53,17 +54,17 @@ async def create_photo(photo: PhotoCreate, db: Session = Depends(get_db)):
 )
 async def create_photo_form(
     photo_url: str = Form(
-        description="URL фотографии",
-        example="https://example.com/images/hogwarts.jpg"
+        default="https://example.com/images/hogwarts.jpg",
+        description="URL фотографии"
     ),
-    set_id: int | None = Form(
+    set_id: Optional[int] = Form(
         default=None,
-        description="ID набора LEGO, к которому относится фото",
+        description="ID набора LEGO, к которому относится фото (оставьте пустым для null)",
         example=75968
     ),
-    minifigure_id: str | None = Form(
+    minifigure_id: Optional[str] = Form(
         default=None,
-        description="ID минифигурки LEGO, к которой относится фото",
+        description="ID минифигурки LEGO, к которой относится фото (оставьте пустым для null)",
         example="hp150"
     ),
     is_main: bool = Form(
@@ -119,14 +120,14 @@ async def update_photo_form(
         description="URL фотографии",
         example="https://example.com/images/hogwarts.jpg"
     ),
-    set_id: int | None = Form(
+    set_id: Optional[int] = Form(
         default=None,
-        description="ID набора LEGO, к которому относится фото",
+        description="ID набора LEGO, к которому относится фото (оставьте пустым для null)",
         example=75968
     ),
-    minifigure_id: str | None = Form(
+    minifigure_id: Optional[str] = Form(
         default=None,
-        description="ID минифигурки LEGO, к которой относится фото",
+        description="ID минифигурки LEGO, к которой относится фото (оставьте пустым для null)",
         example="hp150"
     ),
     is_main: bool | None = Form(
@@ -164,6 +165,7 @@ async def delete_photo(photo_delete: PhotoDelete, db: Session = Depends(get_db))
 )
 async def delete_photo_form(
     photo_id: int = Form(
+        default=1,
         description="Уникальный идентификатор фотографии для удаления"
     ),
     db: Session = Depends(get_db)

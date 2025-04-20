@@ -59,12 +59,12 @@ async def create_tag(tag: TagCreate, db: Session = Depends(get_db)):
 )
 async def create_tag_form(
     name: str = Form(
-        description="Название тега",
-        example="Хогвартс"
+        default="Хогвартс",
+        description="Название тега"
     ),
     tag_type: Literal["set", "minifigure", "both"] = Form(
-        description="Тип тега: set - только для наборов, minifigure - только для минифигурок, both - для обоих",
-        example="both"
+        default="both",
+        description="Тип тега: set - только для наборов, minifigure - только для минифигурок, both - для обоих"
     ),
     db: Session = Depends(get_db)
 ):
@@ -147,6 +147,7 @@ async def delete_tag(tag_delete: TagDelete, db: Session = Depends(get_db)):
 )
 async def delete_tag_form(
     tag_id: int = Form(
+        default=1,
         description="Уникальный идентификатор тега для удаления"
     ),
     db: Session = Depends(get_db)
@@ -179,12 +180,12 @@ async def create_set_tag(set_tag: SetTagCreate, db: Session = Depends(get_db)):
 )
 async def create_set_tag_form(
     set_id: int = Form(
-        description="ID набора LEGO",
-        example=75968
+        default=75968,
+        description="ID набора LEGO"
     ),
     tag_id: int = Form(
-        description="ID тега",
-        example=1
+        default=1,
+        description="ID тега"
     ),
     db: Session = Depends(get_db)
 ):
@@ -215,12 +216,12 @@ async def delete_set_tag(set_tag_delete: SetTagDelete, db: Session = Depends(get
 )
 async def delete_set_tag_form(
     set_id: int = Form(
-        description="ID набора LEGO",
-        example=75968
+        default=75968,
+        description="ID набора LEGO"
     ),
     tag_id: int = Form(
-        description="ID тега",
-        example=1
+        default=1,
+        description="ID тега"
     ),
     db: Session = Depends(get_db)
 ):
@@ -255,12 +256,12 @@ async def create_minifigure_tag(minifigure_tag: MinifigureTagCreate, db: Session
 )
 async def create_minifigure_tag_form(
     minifigure_id: str = Form(
-        description="ID минифигурки LEGO",
-        example="hp150"
+        default="hp150",
+        description="ID минифигурки LEGO"
     ),
     tag_id: int = Form(
-        description="ID тега",
-        example=1
+        default=1,
+        description="ID тега"
     ),
     db: Session = Depends(get_db)
 ):
@@ -291,12 +292,12 @@ async def delete_minifigure_tag(minifigure_tag_delete: MinifigureTagDelete, db: 
 )
 async def delete_minifigure_tag_form(
     minifigure_id: str = Form(
-        description="ID минифигурки LEGO",
-        example="hp150"
+        default="hp150",
+        description="ID минифигурки LEGO"
     ),
     tag_id: int = Form(
-        description="ID тега",
-        example=1
+        default=1,
+        description="ID тега"
     ),
     db: Session = Depends(get_db)
 ):

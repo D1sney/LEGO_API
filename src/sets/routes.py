@@ -1,6 +1,7 @@
 # src/sets/routes.py
 from fastapi import status, HTTPException, Depends, APIRouter, Request, Form
 from sqlalchemy.orm import Session
+from typing import Optional
 from src.sets.schemas import SetCreate, SetResponse, SetUpdate, SetDelete, SetMinifigureCreate, SetMinifigureResponse, SetMinifigureDelete
 from src.database import get_db
 from src.sets.db import (
@@ -79,9 +80,9 @@ async def create_set_form(
         default=8999.99,
         description="Цена набора в рублях"
     ),
-    face_photo_id: int | None = Form(
+    face_photo_id: Optional[int] = Form(
         default=None,
-        description="ID главного фото набора"
+        description="ID главного фото набора (оставьте пустым для null)"
     ),
     db: Session = Depends(get_db)
 ):
@@ -154,9 +155,9 @@ async def update_set_form(
         default=None,
         description="Цена набора в рублях"
     ),
-    face_photo_id: int | None = Form(
+    face_photo_id: Optional[int] = Form(
         default=None,
-        description="ID главного фото набора"
+        description="ID главного фото набора (оставьте пустым для null)"
     ),
     db: Session = Depends(get_db)
 ):

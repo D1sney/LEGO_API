@@ -1,6 +1,7 @@
 # src/minifigures/routes.py
 from fastapi import status, HTTPException, Depends, APIRouter, Form
 from sqlalchemy.orm import Session
+from typing import Optional
 from src.minifigures.schemas import MinifigureCreate, MinifigureResponse, MinifigureUpdate, MinifigureDelete
 from src.database import get_db
 from src.minifigures.db import (
@@ -54,20 +55,20 @@ async def create_minifigure(minifigure: MinifigureCreate, db: Session = Depends(
 )
 async def create_minifigure_form(
     minifigure_id: str = Form(
-        description="Уникальный идентификатор минифигурки",
-        example="hp150"
+        default="hp150",
+        description="Уникальный идентификатор минифигурки"
     ),
     character_name: str = Form(
-        description="Имя персонажа",
-        example="Гарри Поттер"
+        default="Гарри Поттер",
+        description="Имя персонажа"
     ),
     name: str = Form(
-        description="Название минифигурки",
-        example="Harry Potter, Gryffindor Robe"
+        default="Harry Potter, Gryffindor Robe",
+        description="Название минифигурки"
     ),
-    face_photo_id: int | None = Form(
+    face_photo_id: Optional[int] = Form(
         default=None,
-        description="ID главного фото минифигурки"
+        description="ID главного фото минифигурки (оставьте пустым для null)"
     ),
     db: Session = Depends(get_db)
 ):
@@ -123,9 +124,9 @@ async def update_minifigure_form(
         description="Название минифигурки",
         example="Harry Potter, Gryffindor Robe"
     ),
-    face_photo_id: int | None = Form(
+    face_photo_id: Optional[int] = Form(
         default=None,
-        description="ID главного фото минифигурки"
+        description="ID главного фото минифигурки (оставьте пустым для null)"
     ),
     db: Session = Depends(get_db)
 ):
@@ -157,8 +158,8 @@ async def delete_minifigure(minifigure_delete: MinifigureDelete, db: Session = D
 )
 async def delete_minifigure_form(
     minifigure_id: str = Form(
-        description="Уникальный идентификатор минифигурки для удаления",
-        example="hp150"
+        default="hp150",
+        description="Уникальный идентификатор минифигурки для удаления"
     ),
     db: Session = Depends(get_db)
 ):
