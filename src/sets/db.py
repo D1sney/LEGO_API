@@ -1,13 +1,15 @@
 # src/sets/db.py
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import UniqueViolation, ForeignKeyViolation, NotNullViolation, CheckViolation
 from src.sets.models import Set, SetMinifigure
+from src.photos.models import Photo
 from src.sets.schemas import SetCreate, SetUpdate, SetDelete, SetMinifigureCreate, SetMinifigureDelete
 
 def get_db_sets(db: Session, limit: int = 10, offset: int = 0, search: str | None = "") -> list[Set]:
-    sets = db.query(Set).filter(Set.name.contains(search)).limit(limit).offset(offset).all()
+    # Используем joinedload для загрузки связанных фотографий одним запросом
+    sets = db.query(Set).options(joinedload(Set.face_photo)).filter(Set.name.contains(search)).limit(limit).offset(offset).all()
     return sets
 
 def create_db_set(set: SetCreate, db: Session) -> Set:
@@ -16,6 +18,9 @@ def create_db_set(set: SetCreate, db: Session) -> Set:
         db.add(new_set)
         db.commit()
         db.refresh(new_set)
+        # Подгружаем информацию о фотографии, если она есть
+        if new_set.face_photo_id:
+            db.refresh(new_set, ['face_photo'])
         return new_set
     except IntegrityError as e:
         db.rollback()
@@ -31,7 +36,8 @@ def create_db_set(set: SetCreate, db: Session) -> Set:
             raise HTTPException(status_code=400, detail="Integrity error")
 
 def get_db_one_set(db: Session, set_id: int) -> Set:
-    one_set = db.query(Set).filter(Set.set_id == set_id).first()
+    # Используем joinedload для загрузки связанных фотографий одним запросом
+    one_set = db.query(Set).options(joinedload(Set.face_photo)).filter(Set.set_id == set_id).first()
     if not one_set:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Set with id {set_id} was not found")
     return one_set
@@ -43,7 +49,10 @@ def update_db_set(set_id: int, set_update: SetUpdate, db: Session) -> Set:
         setattr(db_set, key, value)
     try:
         db.commit()
+        # Подгружаем информацию о фотографии, если она есть
         db.refresh(db_set)
+        if db_set.face_photo_id:
+            db.refresh(db_set, ['face_photo'])
         return db_set
     except IntegrityError as e:
         db.rollback()

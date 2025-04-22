@@ -1,6 +1,7 @@
 # src/minifigures/schemas.py
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
+from src.photos.schemas import PhotoResponse
 
 class MinifigureBase(BaseModel):
     minifigure_id: str = Field(..., description="Уникальный идентификатор минифигурки (например, hp150)", example="hp150")
@@ -35,6 +36,8 @@ class MinifigureUpdate(BaseModel):
             raise ValueError("face_photo_id должен быть целым числом или пустым")
 
 class MinifigureResponse(MinifigureBase):
+    face_photo: Optional[PhotoResponse] = Field(None, description="Информация о главной фотографии минифигурки")
+    
     class Config:
         from_attributes = True
 
