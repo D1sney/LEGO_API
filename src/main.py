@@ -13,7 +13,7 @@ from src.tags.routes import router as tags_router
 from src.photos.routes import router as photos_router
 
 # Создаем таблицы в базе данных
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="LEGO Collection API",

@@ -21,6 +21,14 @@ class SetCreate(SetBase):
             return int(value) if value is not None else None
         except (ValueError, TypeError):
             raise ValueError("face_photo_id должен быть целым числом или пустым")
+    
+    @field_validator("sub_theme", mode="before")
+    @classmethod
+    def parse_sub_theme(cls, value):
+        # Превращаем пустую строку в None
+        if value is None or (isinstance(value, str) and value.strip() == ""):
+            return None
+        return value
 
 class SetUpdate(BaseModel):
     name: Optional[str] = Field(None, description="Название набора LEGO", example="Хогвартс: Астрономическая башня")
@@ -40,6 +48,14 @@ class SetUpdate(BaseModel):
             return int(value) if value is not None else None
         except (ValueError, TypeError):
             raise ValueError("face_photo_id должен быть целым числом или пустым")
+    
+    @field_validator("sub_theme", mode="before")
+    @classmethod
+    def parse_sub_theme(cls, value):
+        # Превращаем пустую строку в None
+        if value is None or (isinstance(value, str) and value.strip() == ""):
+            return None
+        return value
 
 class SetResponse(SetBase):
     set_id: int = Field(..., description="Уникальный идентификатор набора")

@@ -73,7 +73,8 @@ async def create_set_form(
         description="Основная тема набора"
     ),
     sub_theme: str | None = Form(
-        default="Hogwarts",
+        example="Hogwarts",
+        default=None,
         description="Подтема набора (если есть)"
     ),
     price: float = Form(
