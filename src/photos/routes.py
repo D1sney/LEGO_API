@@ -1,7 +1,10 @@
 # src/photos/routes.py
-from fastapi import status, HTTPException, Depends, APIRouter, Form
+from fastapi import status, HTTPException, Depends, APIRouter, Form, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import Optional
+import shutil
+import os
+from pathlib import Path
 from src.photos.schemas import PhotoCreate, PhotoResponse, PhotoUpdate, PhotoDelete
 from src.database import get_db
 from src.photos.db import (
@@ -16,6 +19,62 @@ router = APIRouter(
     prefix="/photos",
     tags=["Photos"]
 )
+
+# Функция для создания уникального имени файла
+def get_unique_filename(filename: str) -> str:
+    """Создает уникальное имя файла, добавляя метку времени"""
+    import time
+    name, ext = os.path.splitext(filename)
+    timestamp = int(time.time())
+    return f"{name}_{timestamp}{ext}"
+
+@router.post(
+    "/upload/", 
+    status_code=status.HTTP_201_CREATED, 
+    response_model=PhotoResponse,
+    summary="Загрузить фотографию",
+    description="Загружает фотографию на сервер и создает запись в базе данных"
+)
+async def upload_photo(
+    file: UploadFile = File(...),
+    set_id: str = Form("", description="ID набора LEGO (оставьте пустым если не связано с набором)"),
+    minifigure_id: str = Form("", description="ID минифигурки LEGO (оставьте пустым если не связано с минифигуркой)"),
+    is_main: bool = Form(False, description="Является ли фото основным"),
+    db: Session = Depends(get_db)
+):
+    # Проверяем, что файл - изображение
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Загружаемый файл должен быть изображением")
+    
+    # Создаем уникальное имя файла
+    unique_filename = get_unique_filename(file.filename)
+    
+    # Путь для сохранения файла
+    folder = "photos"
+    upload_folder = Path("static") / folder
+    upload_folder.mkdir(parents=True, exist_ok=True)
+    
+    # Полный путь к файлу
+    file_path = upload_folder / unique_filename
+    
+    # Сохраняем файл
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Относительный путь для БД
+    relative_path = f"{folder}/{unique_filename}"
+    
+    # Создаем запись в БД
+    photo_data = PhotoCreate(
+        photo_url=relative_path,
+        set_id=set_id,
+        minifigure_id=minifigure_id,
+        is_main=is_main
+    )
+    
+    # Сохраняем в БД
+    new_photo = create_db_photo(photo_data, db)
+    return new_photo
 
 @router.get(
     "/", 

@@ -1,5 +1,6 @@
 # src/main.py
 from fastapi import FastAPI, Depends
+from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 from src.database import engine, get_db, Base
 from src.sets.models import Set, SetMinifigure
@@ -30,6 +31,9 @@ app = FastAPI(
         "url": "https://opensource.org/licenses/MIT",
     },
 )
+
+# Подключаем папку static для раздачи файлов
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Подключаем маршруты
 app.include_router(sets_router)

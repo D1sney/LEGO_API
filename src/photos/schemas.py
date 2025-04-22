@@ -52,6 +52,13 @@ class PhotoUpdate(BaseModel):
 class PhotoResponse(PhotoBase):
     photo_id: int = Field(..., description="Уникальный идентификатор фотографии")
 
+    @field_validator("photo_url", mode="before")
+    @classmethod
+    def make_absolute_url(cls, value):
+        # Преобразуем относительный путь в абсолютный URL
+        base_url = "http://127.0.0.1:8000"  # Замени на адрес твоего сервера при деплое
+        return f"{base_url}/static/{value}"
+    
     class Config:
         from_attributes = True
 
