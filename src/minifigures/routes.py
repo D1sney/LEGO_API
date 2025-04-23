@@ -64,3 +64,14 @@ async def update_minifigure(minifigure_id: str, minifigure_update: MinifigureUpd
 async def delete_minifigure(minifigure_delete: MinifigureDelete, db: Session = Depends(get_db)):
     result = delete_db_minifigure(minifigure_delete, db)
     return result
+
+@router.get(
+    "/{minifigure_id}/", 
+    status_code=200, 
+    response_model=MinifigureResponse,
+    summary="Получить минифигурку по ID",
+    description="Возвращает информацию о конкретной минифигурке LEGO по ее ID"
+)
+async def get_one_minifigure(minifigure_id: str, db: Session = Depends(get_db)):
+    minifigure = get_db_one_minifigure(db, minifigure_id)
+    return minifigure
