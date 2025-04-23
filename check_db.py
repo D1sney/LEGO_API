@@ -39,6 +39,16 @@ try:
 except Exception as e:
     print("Ошибка при получении минифигурок:", e)
 
+# Проверка содержимого таблицы tags
+try:
+    result = conn.execute(text("SELECT * FROM tags"))
+    tags = [row for row in result]
+    print("\nТеги в базе данных:")
+    for tag in tags:
+        print(tag)
+except Exception as e:
+    print("Ошибка при получении тегов:", e)
+
 # Закрытие соединения
 conn.close()
 print("\nПроверка завершена") 
