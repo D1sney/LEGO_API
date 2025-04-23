@@ -17,9 +17,7 @@ def create_db_minifigure(minifigure: MinifigureCreate, db: Session) -> Minifigur
         db.add(new_minifigure)
         db.commit()
         db.refresh(new_minifigure)
-        if new_minifigure.face_photo_id:
-            db.refresh(new_minifigure, ['face_photo'])
-        return new_minifigure
+        return db.query(Minifigure).options(joinedload(Minifigure.face_photo)).filter(Minifigure.minifigure_id == new_minifigure.minifigure_id).first()
     except IntegrityError as e:
         db.rollback()
         if isinstance(e.orig, UniqueViolation):
@@ -46,10 +44,7 @@ def update_db_minifigure(minifigure_id: str, minifigure_update: MinifigureUpdate
         setattr(db_minifigure, key, value)
     try:
         db.commit()
-        db.refresh(db_minifigure)
-        if db_minifigure.face_photo_id:
-            db.refresh(db_minifigure, ['face_photo'])
-        return db_minifigure
+        return db.query(Minifigure).options(joinedload(Minifigure.face_photo)).filter(Minifigure.minifigure_id == minifigure_id).first()
     except IntegrityError as e:
         db.rollback()
         if isinstance(e.orig, UniqueViolation):
