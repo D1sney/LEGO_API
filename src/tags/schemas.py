@@ -1,17 +1,23 @@
 # src/tags/schemas.py
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional
+from enum import Enum
+
+class TagType(str, Enum):
+    set = "set"
+    minifigure = "minifigure"
+    both = "both"
 
 class TagBase(BaseModel):
     name: str = Field(..., description="Название тега", example="Хогвартс")
-    tag_type: Literal["set", "minifigure", "both"] = Field(..., description="Тип тега: set - только для наборов, minifigure - только для минифигурок, both - для обоих", example="both")
+    tag_type: TagType = Field(..., description="Тип тега: set - только для наборов, minifigure - только для минифигурок, both - для обоих", example=TagType.both)
 
 class TagCreate(TagBase):
     pass
 
 class TagUpdate(BaseModel):
     name: Optional[str] = Field(None, description="Название тега", example="Хогвартс")
-    tag_type: Optional[Literal["set", "minifigure", "both"]] = Field(None, description="Тип тега: set - только для наборов, minifigure - только для минифигурок, both - для обоих", example="both")
+    tag_type: Optional[TagType] = Field(None, description="Тип тега: set - только для наборов, minifigure - только для минифигурок, both - для обоих", example=TagType.both)
 
 class TagResponse(TagBase):
     tag_id: int = Field(..., description="Уникальный идентификатор тега")
@@ -30,17 +36,12 @@ class SetTagBase(BaseModel):
 class SetTagCreate(SetTagBase):
     pass
 
-class SetTagUpdate(BaseModel):
-    set_id: Optional[int] = Field(None, description="ID набора LEGO", example=75968)
-    tag_id: Optional[int] = Field(None, description="ID тега", example=1)
-
 class SetTagResponse(SetTagBase):
     class Config:
         from_attributes = True
 
-class SetTagDelete(BaseModel):
-    set_id: int = Field(..., description="ID набора LEGO", example=75968)
-    tag_id: int = Field(..., description="ID тега", example=1)
+class SetTagDelete(SetTagBase):
+    pass
 
 # Схемы для Minifigure_Tags
 class MinifigureTagBase(BaseModel):
@@ -50,14 +51,9 @@ class MinifigureTagBase(BaseModel):
 class MinifigureTagCreate(MinifigureTagBase):
     pass
 
-class MinifigureTagUpdate(BaseModel):
-    minifigure_id: Optional[str] = Field(None, description="ID минифигурки LEGO", example="hp150")
-    tag_id: Optional[int] = Field(None, description="ID тега", example=1)
-
 class MinifigureTagResponse(MinifigureTagBase):
     class Config:
         from_attributes = True
 
-class MinifigureTagDelete(BaseModel):
-    minifigure_id: str = Field(..., description="ID минифигурки LEGO", example="hp150")
-    tag_id: int = Field(..., description="ID тега", example=1)
+class MinifigureTagDelete(MinifigureTagBase):
+    pass
