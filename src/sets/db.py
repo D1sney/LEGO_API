@@ -5,14 +5,29 @@ from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import UniqueViolation, ForeignKeyViolation, NotNullViolation, CheckViolation
 from src.sets.models import Set, SetMinifigure
 from src.photos.models import Photo
+from src.tags.models import Tag, SetTag
 from src.sets.schemas import SetCreate, SetUpdate, SetDelete, SetMinifigureCreate, SetMinifigureDelete
+from typing import Optional
 
-def get_db_sets(db: Session, limit: int = 10, offset: int = 0, search: str | None = "") -> list[Set]:
+def get_db_sets(db: Session, limit: int = 10, offset: int = 0, search: str | None = "", tag_name: Optional[str] = None) -> list[Set]:
     # Используем joinedload для загрузки связанных фотографий и тегов одним запросом
-    sets = db.query(Set).options(
+    query = db.query(Set).options(
         joinedload(Set.face_photo),
         joinedload(Set.tags)
-    ).filter(Set.name.contains(search)).limit(limit).offset(offset).all()
+    ).filter(Set.name.contains(search))
+
+    if tag_name:
+        # Проверяем существование тега
+        tag = db.query(Tag).filter(Tag.name == tag_name).first()
+        if not tag:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Тег с именем '{tag_name}' не найден")
+        
+        # Фильтруем наборы по тегу через таблицу set_tags
+        query = query.join(SetTag, Set.set_id == SetTag.set_id)\
+                     .join(Tag, SetTag.tag_id == Tag.tag_id)\
+                     .filter(Tag.name == tag_name)
+
+    sets = query.limit(limit).offset(offset).all()
     return sets
 
 def create_db_set(set: SetCreate, db: Session) -> Set:
