@@ -15,4 +15,5 @@ class Minifigure(Base):
     face_photo = relationship("Photo", foreign_keys=[face_photo_id], back_populates="minifigures")
     # Связь с фотографиями минифигурок
     photos = relationship("Photo", back_populates="minifigure", foreign_keys="Photo.minifigure_id")
-    # Обратная связь с тегами определена в модели Tag через backref="tag_items"
+    # Явная связь с тегами через minifigure_tags
+    tags = relationship("Tag", secondary="minifigure_tags", back_populates="minifigures")

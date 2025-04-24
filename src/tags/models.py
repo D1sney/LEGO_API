@@ -18,8 +18,8 @@ class Tag(Base):
 
     # Связь с наборами через Set_Tags, синхронизирована с моделью Set
     sets = relationship("Set", secondary="set_tags", back_populates="tags")
-    # Связь с минифигурками через Minifigure_Tags
-    minifigures = relationship("Minifigure", secondary="minifigure_tags", backref="tag_items")
+    # Связь с минифигурками через Minifigure_Tags, синхронизирована с моделью Minifigure
+    minifigures = relationship("Minifigure", secondary="minifigure_tags", back_populates="tags")
 
 class SetTag(Base):
     __tablename__ = "set_tags"

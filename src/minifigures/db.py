@@ -8,7 +8,10 @@ from src.photos.models import Photo
 from src.minifigures.schemas import MinifigureCreate, MinifigureUpdate, MinifigureDelete
 
 def get_db_minifigures(db: Session, limit: int = 10, offset: int = 0, search: str | None = "") -> list[Minifigure]:
-    minifigures = db.query(Minifigure).options(joinedload(Minifigure.face_photo)).filter(Minifigure.name.contains(search)).limit(limit).offset(offset).all()
+    minifigures = db.query(Minifigure).options(
+        joinedload(Minifigure.face_photo),
+        joinedload(Minifigure.tags)
+    ).filter(Minifigure.name.contains(search)).limit(limit).offset(offset).all()
     return minifigures
 
 def create_db_minifigure(minifigure: MinifigureCreate, db: Session) -> Minifigure:
@@ -32,7 +35,10 @@ def create_db_minifigure(minifigure: MinifigureCreate, db: Session) -> Minifigur
             raise HTTPException(status_code=400, detail="Integrity error")
 
 def get_db_one_minifigure(db: Session, minifigure_id: str) -> Minifigure:
-    one_minifigure = db.query(Minifigure).options(joinedload(Minifigure.face_photo)).filter(Minifigure.minifigure_id == minifigure_id).first()
+    one_minifigure = db.query(Minifigure).options(
+        joinedload(Minifigure.face_photo),
+        joinedload(Minifigure.tags)
+    ).filter(Minifigure.minifigure_id == minifigure_id).first()
     if not one_minifigure:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Minifigure with id {minifigure_id} was not found")
     return one_minifigure

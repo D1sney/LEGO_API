@@ -1,7 +1,8 @@
 # src/minifigures/schemas.py
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 from src.photos.schemas import PhotoResponse
+from src.tags.schemas import TagResponse
 
 class MinifigureBase(BaseModel):
     minifigure_id: str = Field(..., description="Уникальный идентификатор минифигурки (например, hp150)", example="hp150")
@@ -37,6 +38,7 @@ class MinifigureUpdate(BaseModel):
 
 class MinifigureResponse(MinifigureBase):
     face_photo: Optional[PhotoResponse] = Field(None, description="Информация о главной фотографии минифигурки")
+    tags: List[TagResponse] = Field(default=[], description="Список тегов, связанных с минифигуркой")
     
     class Config:
         from_attributes = True
