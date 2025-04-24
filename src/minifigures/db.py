@@ -5,13 +5,29 @@ from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import UniqueViolation, ForeignKeyViolation, NotNullViolation, CheckViolation
 from src.minifigures.models import Minifigure
 from src.photos.models import Photo
+from src.tags.models import Tag, MinifigureTag
 from src.minifigures.schemas import MinifigureCreate, MinifigureUpdate, MinifigureDelete
+from typing import Optional
 
-def get_db_minifigures(db: Session, limit: int = 10, offset: int = 0, search: str | None = "") -> list[Minifigure]:
-    minifigures = db.query(Minifigure).options(
+def get_db_minifigures(db: Session, limit: int = 10, offset: int = 0, search: str | None = "", tag_name: Optional[str] = None) -> list[Minifigure]:
+    # Используем joinedload для загрузки связанных фотографий и тегов одним запросом
+    query = db.query(Minifigure).options(
         joinedload(Minifigure.face_photo),
         joinedload(Minifigure.tags)
-    ).filter(Minifigure.name.contains(search)).limit(limit).offset(offset).all()
+    ).filter(Minifigure.name.contains(search))
+
+    if tag_name:
+        # Проверяем существование тега
+        tag = db.query(Tag).filter(Tag.name == tag_name).first()
+        if not tag:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Тег с именем '{tag_name}' не найден")
+        
+        # Фильтруем минифигурки по тегу через таблицу minifigure_tags
+        query = query.join(MinifigureTag, Minifigure.minifigure_id == MinifigureTag.minifigure_id)\
+                     .join(Tag, MinifigureTag.tag_id == Tag.tag_id)\
+                     .filter(Tag.name == tag_name)
+
+    minifigures = query.limit(limit).offset(offset).all()
     return minifigures
 
 def create_db_minifigure(minifigure: MinifigureCreate, db: Session) -> Minifigure:
