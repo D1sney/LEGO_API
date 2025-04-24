@@ -8,8 +8,11 @@ from src.photos.models import Photo
 from src.sets.schemas import SetCreate, SetUpdate, SetDelete, SetMinifigureCreate, SetMinifigureDelete
 
 def get_db_sets(db: Session, limit: int = 10, offset: int = 0, search: str | None = "") -> list[Set]:
-    # Используем joinedload для загрузки связанных фотографий одним запросом
-    sets = db.query(Set).options(joinedload(Set.face_photo)).filter(Set.name.contains(search)).limit(limit).offset(offset).all()
+    # Используем joinedload для загрузки связанных фотографий и тегов одним запросом
+    sets = db.query(Set).options(
+        joinedload(Set.face_photo),
+        joinedload(Set.tags)
+    ).filter(Set.name.contains(search)).limit(limit).offset(offset).all()
     return sets
 
 def create_db_set(set: SetCreate, db: Session) -> Set:
@@ -33,8 +36,11 @@ def create_db_set(set: SetCreate, db: Session) -> Set:
             raise HTTPException(status_code=400, detail="Integrity error")
 
 def get_db_one_set(db: Session, set_id: int) -> Set:
-    # Используем joinedload для загрузки связанных фотографий одним запросом
-    one_set = db.query(Set).options(joinedload(Set.face_photo)).filter(Set.set_id == set_id).first()
+    # Используем joinedload для загрузки связанных фотографий и тегов одним запросом
+    one_set = db.query(Set).options(
+        joinedload(Set.face_photo),
+        joinedload(Set.tags)
+    ).filter(Set.set_id == set_id).first()
     if not one_set:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Set with id {set_id} was not found")
     return one_set

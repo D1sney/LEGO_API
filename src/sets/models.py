@@ -21,7 +21,8 @@ class Set(Base):
     minifigures = relationship("Minifigure", secondary="set_minifigures", backref="sets")
     # Связь с фотографиями наборов
     photos = relationship("Photo", back_populates="set", foreign_keys="Photo.set_id")
-    # Обратная связь с тегами определена в модели Tag через backref="tag_items"
+    # Явная связь с тегами через set_tags
+    tags = relationship("Tag", secondary="set_tags", back_populates="sets")
 
 class SetMinifigure(Base):
     __tablename__ = "set_minifigures"

@@ -1,7 +1,8 @@
 # src/sets/schemas.py
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from src.photos.schemas import PhotoResponse
+from src.tags.schemas import TagResponse
 
 class SetBase(BaseModel):
     name: str = Field(..., description="Название набора LEGO", example="Хогвартс: Астрономическая башня")
@@ -61,6 +62,7 @@ class SetUpdate(BaseModel):
 class SetResponse(SetBase):
     set_id: int = Field(..., description="Уникальный идентификатор набора")
     face_photo: Optional[PhotoResponse] = Field(None, description="Информация о главной фотографии набора")
+    tags: List[TagResponse] = Field(default=[], description="Список тегов, связанных с набором")
 
     class Config:
         from_attributes = True

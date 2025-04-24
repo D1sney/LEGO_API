@@ -16,8 +16,8 @@ class Tag(Base):
     name = Column(String, unique=True, nullable=False)
     tag_type = Column(Enum(TagType), nullable=False)
 
-    # Связь с наборами через Set_Tags
-    sets = relationship("Set", secondary="set_tags", backref="tag_items")
+    # Связь с наборами через Set_Tags, синхронизирована с моделью Set
+    sets = relationship("Set", secondary="set_tags", back_populates="tags")
     # Связь с минифигурками через Minifigure_Tags
     minifigures = relationship("Minifigure", secondary="minifigure_tags", backref="tag_items")
 
