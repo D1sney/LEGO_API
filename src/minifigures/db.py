@@ -11,12 +11,18 @@ from typing import Optional, List
 from sqlalchemy.sql import func
 from sqlalchemy import distinct
 
-def get_db_minifigures(db: Session, limit: int = 10, offset: int = 0, search: str = "", tag_names: Optional[str] = "", tag_logic: str = "AND") -> list[Minifigure]:
+def get_db_minifigures(db: Session, limit: int = 10, offset: int = 0, search: str = "", tag_names: Optional[str] = "", tag_logic: str = "AND", min_price: Optional[float] = None, max_price: Optional[float] = None) -> list[Minifigure]:
     # Формируем базовый запрос с загрузкой связанных данных
     query = db.query(Minifigure).options(
         joinedload(Minifigure.face_photo),
         joinedload(Minifigure.tags)
     ).filter(Minifigure.name.contains(search))
+
+    # Применяем фильтрацию по цене
+    if min_price is not None:
+        query = query.filter(Minifigure.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Minifigure.price <= max_price)
 
     # Обрабатываем фильтрацию по тегам
     tags_list = []

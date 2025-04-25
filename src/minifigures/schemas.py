@@ -9,6 +9,7 @@ class MinifigureBase(BaseModel):
     minifigure_id: str = Field(..., description="Уникальный идентификатор минифигурки (например, hp150)", example="hp150")
     character_name: str = Field(..., description="Имя персонажа", example="Гарри Поттер")
     name: str = Field(..., description="Название минифигурки", example="Harry Potter, Gryffindor Robe")
+    price: float = Field(..., description="Цена минифигурки в рублях", example=499.99, gt=0)
     face_photo_id: Optional[int] = Field(None, description="ID главного фото минифигурки")
 
 class MinifigureCreate(MinifigureBase):
@@ -25,6 +26,7 @@ class MinifigureCreate(MinifigureBase):
 class MinifigureUpdate(BaseModel):
     character_name: Optional[str] = Field(None, description="Имя персонажа", example="Гарри Поттер")
     name: Optional[str] = Field(None, description="Название минифигурки", example="Harry Potter, Gryffindor Robe")
+    price: Optional[float] = Field(None, description="Цена минифигурки в рублях", example=499.99, gt=0)
     face_photo_id: Optional[int] = Field(None, description="ID главного фото минифигурки")
     
     @field_validator("face_photo_id", mode="before")
@@ -53,6 +55,8 @@ class MinifigureFilter(BaseModel):
     search: Optional[str] = Field(default="", description="Поиск по названию минифигурки")
     tag_names: Optional[str] = Field(default="", description="Список имен тегов, разделённых запятыми, для фильтрации минифигурок")
     tag_logic: Optional[str] = Field(default="AND", description="Логика фильтрации тегов: AND или OR")
+    min_price: Optional[float] = Field(default=None, description="Минимальная цена минифигурки в рублях", ge=0)
+    max_price: Optional[float] = Field(default=None, description="Максимальная цена минифигурки в рублях", ge=0)
 
     @field_validator("tag_logic")
     @classmethod
@@ -63,3 +67,24 @@ class MinifigureFilter(BaseModel):
                 detail="tag_logic должен быть 'AND' или 'OR'"
             )
         return value.upper()
+
+    @field_validator("min_price", "max_price")
+    @classmethod
+    def validate_non_negative(cls, value, field):
+        if value is not None and value < 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"{field.name} не может быть отрицательным"
+            )
+        return value
+
+    @field_validator("max_price")
+    @classmethod
+    def validate_price_range(cls, value, values):
+        min_price = values.data.get("min_price")
+        if value is not None and min_price is not None and value < min_price:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="max_price не может быть меньше min_price"
+            )
+        return value

@@ -9,7 +9,8 @@ class Minifigure(Base):
     minifigure_id = Column(String, primary_key=True, index=True)
     character_name = Column(String, nullable=False)
     name = Column(String, unique=True, nullable=False)
-    face_photo_id = Column(Integer, ForeignKey("photos.photo_id"), nullable=True)
+    price = Column(Integer, nullable=False, default=0)
+    face_photo_id = Column(Integer, ForeignKey("photos.photo_id", ondelete="SET NULL"), nullable=True)
 
     # Связь с фотографией лица
     face_photo = relationship("Photo", foreign_keys=[face_photo_id], back_populates="minifigures")

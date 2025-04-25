@@ -22,7 +22,7 @@ router = APIRouter(
     status_code=200, 
     response_model=list[MinifigureResponse],
     summary="Получить список минифигурок",
-    description="Возвращает список всех минифигурок LEGO с возможностью пагинации, поиска и фильтрации по тегу"
+    description="Возвращает список всех минифигурок LEGO с возможностью пагинации, поиска, фильтрации по тегу и цене"
 )
 async def get_minifigures(filter: MinifigureFilter = Depends(), db: Session = Depends(get_db)):
     """
@@ -34,7 +34,9 @@ async def get_minifigures(filter: MinifigureFilter = Depends(), db: Session = De
         offset=filter.offset,
         search=filter.search,
         tag_names=filter.tag_names,
-        tag_logic=filter.tag_logic
+        tag_logic=filter.tag_logic,
+        min_price=filter.min_price,
+        max_price=filter.max_price
     )
     return minifigures
 
