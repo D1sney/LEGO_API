@@ -1,7 +1,7 @@
 # src/minifigures/routes.py
 from fastapi import status, HTTPException, Depends, APIRouter, Form
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from src.minifigures.schemas import MinifigureCreate, MinifigureResponse, MinifigureUpdate, MinifigureDelete, MinifigureFilter
 from src.database import get_db
 from src.minifigures.db import (
@@ -24,11 +24,18 @@ router = APIRouter(
     summary="Получить список минифигурок",
     description="Возвращает список всех минифигурок LEGO с возможностью пагинации, поиска и фильтрации по тегу"
 )
-async def get_minifigures(
-    filter: MinifigureFilter = Depends(),
-    db: Session = Depends(get_db)
-):
-    minifigures = get_db_minifigures(db, filter.limit, filter.offset, filter.search, filter.tag_name)
+async def get_minifigures(filter: MinifigureFilter = Depends(), db: Session = Depends(get_db)):
+    """
+    Получить список минифигурок с фильтрацией и пагинацией.
+    """
+    minifigures = get_db_minifigures(
+        db=db,
+        limit=filter.limit,
+        offset=filter.offset,
+        search=filter.search,
+        tag_names=filter.tag_names,
+        tag_logic=filter.tag_logic
+    )
     return minifigures
 
 @router.post(

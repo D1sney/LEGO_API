@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict, Any, List
 from src.photos.schemas import PhotoResponse
 from src.tags.schemas import TagResponse
-from fastapi import Query
+from fastapi import Query, HTTPException, status
 
 class SetBase(BaseModel):
     name: str = Field(..., description="Название набора LEGO", example="Хогвартс: Астрономическая башня")
@@ -83,7 +83,10 @@ class SetFilter(BaseModel):
     @classmethod
     def validate_tag_logic(cls, value):
         if value.upper() not in ["AND", "OR"]:
-            raise ValueError("tag_logic должен быть 'AND' или 'OR'")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="tag_logic должен быть 'AND' или 'OR'"
+            )
         return value.upper()
 
 
