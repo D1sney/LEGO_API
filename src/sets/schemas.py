@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict, Any, List
 from src.photos.schemas import PhotoResponse
 from src.tags.schemas import TagResponse
+from fastapi import Query
 
 class SetBase(BaseModel):
     name: str = Field(..., description="Название набора LEGO", example="Хогвартс: Астрономическая башня")
@@ -72,10 +73,18 @@ class SetDelete(BaseModel):
 
 
 class SetFilter(BaseModel):
-    limit: int = Field(default=10, description="Количество возвращаемых записей", ge=1)
+    limit: int = Field(default=10, description="Количество возвращаемых записей", ge=1, le=1000)
     offset: int = Field(default=0, description="Смещение для пагинации", ge=0)
     search: Optional[str] = Field(default="", description="Поиск по названию набора")
-    tag_name: Optional[str] = Field(None, description="Имя тега для фильтрации наборов")
+    tag_names: Optional[str] = Field(default="", description="Список имен тегов, разделённых запятыми, для фильтрации наборов")
+    tag_logic: Optional[str] = Field(default="AND", description="Логика фильтрации тегов: AND или OR")
+
+    @field_validator("tag_logic")
+    @classmethod
+    def validate_tag_logic(cls, value):
+        if value.upper() not in ["AND", "OR"]:
+            raise ValueError("tag_logic должен быть 'AND' или 'OR'")
+        return value.upper()
 
 
 # Связи Наборов и Минифигурок

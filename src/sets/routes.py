@@ -1,7 +1,7 @@
 # src/sets/routes.py
 from fastapi import status, HTTPException, Depends, APIRouter, Request, Form
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from src.sets.schemas import SetCreate, SetResponse, SetUpdate, SetDelete, SetMinifigureCreate, SetMinifigureResponse, SetMinifigureDelete, SetFilter
 from src.database import get_db
 from src.sets.db import (
@@ -26,11 +26,18 @@ router = APIRouter(
     summary="Получить список наборов LEGO", 
     description="Возвращает список всех наборов LEGO с возможностью пагинации, поиска и фильтрации по тегу"
 )
-async def get_sets(
-    filter: SetFilter = Depends(),
-    db: Session = Depends(get_db)
-):
-    sets = get_db_sets(db, filter.limit, filter.offset, filter.search, filter.tag_name)
+async def get_sets(filter: SetFilter = Depends(), db: Session = Depends(get_db)):
+    """
+    Получить список наборов с фильтрацией и пагинацией.
+    """
+    sets = get_db_sets(
+        db=db,
+        limit=filter.limit,
+        offset=filter.offset,
+        search=filter.search,
+        tag_names=filter.tag_names,
+        tag_logic=filter.tag_logic
+    )
     return sets
 
 @router.post(
