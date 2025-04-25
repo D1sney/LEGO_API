@@ -78,6 +78,10 @@ class SetFilter(BaseModel):
     search: Optional[str] = Field(default="", description="Поиск по названию набора")
     tag_names: Optional[str] = Field(default="", description="Список имен тегов, разделённых запятыми, для фильтрации наборов")
     tag_logic: Optional[str] = Field(default="AND", description="Логика фильтрации тегов: AND или OR")
+    min_price: Optional[float] = Field(default=None, description="Минимальная цена набора в рублях", ge=0)
+    max_price: Optional[float] = Field(default=None, description="Максимальная цена набора в рублях", ge=0)
+    min_piece_count: Optional[int] = Field(default=None, description="Минимальное количество деталей в наборе", ge=0)
+    max_piece_count: Optional[int] = Field(default=None, description="Максимальное количество деталей в наборе", ge=0)
 
     @field_validator("tag_logic")
     @classmethod
@@ -88,6 +92,38 @@ class SetFilter(BaseModel):
                 detail="tag_logic должен быть 'AND' или 'OR'"
             )
         return value.upper()
+
+    @field_validator("min_price", "max_price", "min_piece_count", "max_piece_count")
+    @classmethod
+    def validate_non_negative(cls, value, field):
+        if value is not None and value < 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"{field.name} не может быть отрицательным"
+            )
+        return value
+
+    @field_validator("max_price")
+    @classmethod
+    def validate_price_range(cls, value, values):
+        min_price = values.data.get("min_price")
+        if value is not None and min_price is not None and value < min_price:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="max_price не может быть меньше min_price"
+            )
+        return value
+
+    @field_validator("max_piece_count")
+    @classmethod
+    def validate_piece_count_range(cls, value, values):
+        min_piece_count = values.data.get("min_piece_count")
+        if value is not None and min_piece_count is not None and value < min_piece_count:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="max_piece_count не может быть меньше min_piece_count"
+            )
+        return value
 
 
 # Связи Наборов и Минифигурок

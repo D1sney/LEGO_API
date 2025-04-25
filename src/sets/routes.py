@@ -24,7 +24,7 @@ router = APIRouter(
     status_code=200,
     response_model=list[SetResponse],
     summary="Получить список наборов LEGO", 
-    description="Возвращает список всех наборов LEGO с возможностью пагинации, поиска и фильтрации по тегу"
+    description="Возвращает список всех наборов LEGO с возможностью пагинации, поиска, фильтрации по тегу, цене и количеству деталей"
 )
 async def get_sets(filter: SetFilter = Depends(), db: Session = Depends(get_db)):
     """
@@ -36,7 +36,11 @@ async def get_sets(filter: SetFilter = Depends(), db: Session = Depends(get_db))
         offset=filter.offset,
         search=filter.search,
         tag_names=filter.tag_names,
-        tag_logic=filter.tag_logic
+        tag_logic=filter.tag_logic,
+        min_price=filter.min_price,
+        max_price=filter.max_price,
+        min_piece_count=filter.min_piece_count,
+        max_piece_count=filter.max_piece_count
     )
     return sets
 
