@@ -9,7 +9,7 @@ class MinifigureBase(BaseModel):
     minifigure_id: str = Field(..., description="Уникальный идентификатор минифигурки (например, hp150)", example="hp150")
     character_name: str = Field(..., description="Имя персонажа", example="Гарри Поттер")
     name: str = Field(..., description="Название минифигурки", example="Harry Potter, Gryffindor Robe")
-    price: float = Field(..., description="Цена минифигурки в рублях", example=499.99, gt=0)
+    price: Optional[float] = Field(None, description="Цена минифигурки в рублях", example=499.99)
     face_photo_id: Optional[int] = Field(None, description="ID главного фото минифигурки")
 
 class MinifigureCreate(MinifigureBase):
