@@ -7,8 +7,8 @@ class Photo(Base):
     __tablename__ = "photos"
 
     photo_id = Column(Integer, primary_key=True, index=True)
-    set_id = Column(Integer, ForeignKey("sets.set_id"), nullable=True)
-    minifigure_id = Column(String, ForeignKey("minifigures.minifigure_id"), nullable=True)
+    set_id = Column(Integer, ForeignKey("sets.set_id", ondelete="CASCADE"), nullable=True)
+    minifigure_id = Column(String, ForeignKey("minifigures.minifigure_id", ondelete="CASCADE"), nullable=True)
     photo_url = Column(String, nullable=False)
     is_main = Column(Boolean, default=False)
 

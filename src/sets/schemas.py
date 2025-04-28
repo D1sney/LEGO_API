@@ -29,6 +29,7 @@ class SetUpdate(BaseModel):
 class SetResponse(SetBase):
     set_id: int = Field(..., description="Уникальный идентификатор набора")
     face_photo: Optional[PhotoResponse] = Field(None, description="Информация о главной фотографии набора")
+    photos: List[PhotoResponse] = Field(default=[], description="Список всех фотографий набора (первой идет главная)")
     tags: List[TagResponse] = Field(default=[], description="Список тегов, связанных с набором")
 
     class Config:

@@ -9,13 +9,20 @@ from src.tags.models import Tag, SetTag
 from src.sets.schemas import SetCreate, SetUpdate, SetDelete, SetMinifigureCreate, SetMinifigureDelete
 from typing import Optional, List
 from sqlalchemy.sql import func
-from sqlalchemy import distinct
+from sqlalchemy import distinct, case
 
 def get_db_sets(db: Session, limit: int = 10, offset: int = 0, search: str = "", tag_names: Optional[str] = "", tag_logic: str = "AND", min_price: Optional[float] = None, max_price: Optional[float] = None, min_piece_count: Optional[int] = None, max_piece_count: Optional[int] = None) -> list[Set]:
     # Формируем базовый запрос с загрузкой связанных данных
     query = db.query(Set).options(
         joinedload(Set.face_photo),
-        joinedload(Set.tags)
+        joinedload(Set.tags),
+        # Загружаем все фотографии с сортировкой: сначала is_main=True, затем остальные
+        joinedload(Set.photos).options(
+            # Используем case для сортировки (is_main сначала)
+            joinedload(Set.photos.and_(
+                Photo.set_id == Set.set_id
+            )).order_by(case([(Photo.is_main, 0)], else_=1))
+        )
     ).filter(Set.name.contains(search))
 
     # Применяем фильтрацию по цене
@@ -61,6 +68,11 @@ def get_db_sets(db: Session, limit: int = 10, offset: int = 0, search: str = "",
 
     # Применяем пагинацию
     sets = query.limit(limit).offset(offset).all()
+    
+    # Сортируем фотографии для каждого набора, чтобы главная фотография была первой
+    for set_item in sets:
+        set_item.photos = sorted(set_item.photos, key=lambda photo: 0 if photo.is_main else 1)
+    
     return sets
 
 def create_db_set(set: SetCreate, db: Session) -> Set:
@@ -87,10 +99,17 @@ def get_db_one_set(db: Session, set_id: int) -> Set:
     # Используем joinedload для загрузки связанных фотографий и тегов одним запросом
     one_set = db.query(Set).options(
         joinedload(Set.face_photo),
-        joinedload(Set.tags)
+        joinedload(Set.tags),
+        # Загружаем все фотографии
+        joinedload(Set.photos)
     ).filter(Set.set_id == set_id).first()
+    
     if not one_set:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Set with id {set_id} was not found")
+    
+    # Сортируем фотографии, чтобы главная фотография была первой
+    one_set.photos = sorted(one_set.photos, key=lambda photo: 0 if photo.is_main else 1)
+    
     return one_set
 
 def update_db_set(set_id: int, set_update: SetUpdate, db: Session) -> Set:
