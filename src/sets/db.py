@@ -16,13 +16,8 @@ def get_db_sets(db: Session, limit: int = 10, offset: int = 0, search: str = "",
     query = db.query(Set).options(
         joinedload(Set.face_photo),
         joinedload(Set.tags),
-        # Загружаем все фотографии с сортировкой: сначала is_main=True, затем остальные
-        joinedload(Set.photos).options(
-            # Используем case для сортировки (is_main сначала)
-            joinedload(Set.photos.and_(
-                Photo.set_id == Set.set_id
-            )).order_by(case([(Photo.is_main, 0)], else_=1))
-        )
+        # Загружаем все фотографии без предварительной сортировки в SQL
+        joinedload(Set.photos)
     ).filter(Set.name.contains(search))
 
     # Применяем фильтрацию по цене
@@ -100,7 +95,7 @@ def get_db_one_set(db: Session, set_id: int) -> Set:
     one_set = db.query(Set).options(
         joinedload(Set.face_photo),
         joinedload(Set.tags),
-        # Загружаем все фотографии
+        # Загружаем все фотографии без предварительной сортировки в SQL
         joinedload(Set.photos)
     ).filter(Set.set_id == set_id).first()
     

@@ -36,5 +36,6 @@ tokens.json
 **/tokens.json
 
 # Файлы
+static/*
 **.xls
 **.pdf

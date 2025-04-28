@@ -24,11 +24,11 @@ class Tag(Base):
 class SetTag(Base):
     __tablename__ = "set_tags"
 
-    set_id = Column(Integer, ForeignKey("sets.set_id"), primary_key=True)
-    tag_id = Column(Integer, ForeignKey("tags.tag_id"), primary_key=True)
+    set_id = Column(Integer, ForeignKey("sets.set_id", ondelete="CASCADE"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.tag_id", ondelete="CASCADE"), primary_key=True)
 
 class MinifigureTag(Base):
     __tablename__ = "minifigure_tags"
 
-    minifigure_id = Column(String, ForeignKey("minifigures.minifigure_id"), primary_key=True)
-    tag_id = Column(Integer, ForeignKey("tags.tag_id"), primary_key=True)
+    minifigure_id = Column(String, ForeignKey("minifigures.minifigure_id", ondelete="CASCADE"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.tag_id", ondelete="CASCADE"), primary_key=True)
