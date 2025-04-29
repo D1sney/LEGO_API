@@ -23,6 +23,7 @@ class MinifigureUpdate(BaseModel):
 
 class MinifigureResponse(MinifigureBase):
     face_photo: Optional[PhotoResponse] = Field(None, description="Информация о главной фотографии минифигурки")
+    photos: List[PhotoResponse] = Field(default=[], description="Список всех фотографий минифигурки")
     tags: List[TagResponse] = Field(default=[], description="Список тегов, связанных с минифигуркой")
     
     class Config:

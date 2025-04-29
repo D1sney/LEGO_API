@@ -76,7 +76,7 @@ def create_db_set(set: SetCreate, db: Session) -> Set:
         db.add(new_set)
         db.commit()
         db.refresh(new_set)
-        return db.query(Set).options(joinedload(Set.face_photo)).filter(Set.set_id == new_set.set_id).first()
+        return db.query(Set).options(joinedload(Set.face_photo), joinedload(Set.photos)).filter(Set.set_id == new_set.set_id).first()
     except IntegrityError as e:
         db.rollback()
         if isinstance(e.orig, UniqueViolation):
@@ -114,7 +114,7 @@ def update_db_set(set_id: int, set_update: SetUpdate, db: Session) -> Set:
         setattr(db_set, key, value)
     try:
         db.commit()
-        return db.query(Set).options(joinedload(Set.face_photo)).filter(Set.set_id == set_id).first()
+        return db.query(Set).options(joinedload(Set.face_photo), joinedload(Set.photos)).filter(Set.set_id == set_id).first()
     except IntegrityError as e:
         db.rollback()
         if isinstance(e.orig, UniqueViolation):

@@ -15,6 +15,7 @@ def get_db_minifigures(db: Session, limit: int = 10, offset: int = 0, search: st
     # Формируем базовый запрос с загрузкой связанных данных
     query = db.query(Minifigure).options(
         joinedload(Minifigure.face_photo),
+        joinedload(Minifigure.photos),
         joinedload(Minifigure.tags)
     ).filter(Minifigure.name.contains(search))
 
@@ -55,6 +56,11 @@ def get_db_minifigures(db: Session, limit: int = 10, offset: int = 0, search: st
 
     # Применяем пагинацию
     minifigures = query.limit(limit).offset(offset).all()
+    
+    # Сортируем фотографии для каждой минифигурки, чтобы главная фотография была первой
+    for minifigure in minifigures:
+        minifigure.photos = sorted(minifigure.photos, key=lambda photo: 0 if photo.is_main else 1)
+    
     return minifigures
 
 def create_db_minifigure(minifigure: MinifigureCreate, db: Session) -> Minifigure:
@@ -63,7 +69,7 @@ def create_db_minifigure(minifigure: MinifigureCreate, db: Session) -> Minifigur
         db.add(new_minifigure)
         db.commit()
         db.refresh(new_minifigure)
-        return db.query(Minifigure).options(joinedload(Minifigure.face_photo)).filter(Minifigure.minifigure_id == new_minifigure.minifigure_id).first()
+        return db.query(Minifigure).options(joinedload(Minifigure.face_photo), joinedload(Minifigure.photos)).filter(Minifigure.minifigure_id == new_minifigure.minifigure_id).first()
     except IntegrityError as e:
         db.rollback()
         if isinstance(e.orig, UniqueViolation):
@@ -80,10 +86,15 @@ def create_db_minifigure(minifigure: MinifigureCreate, db: Session) -> Minifigur
 def get_db_one_minifigure(db: Session, minifigure_id: str) -> Minifigure:
     one_minifigure = db.query(Minifigure).options(
         joinedload(Minifigure.face_photo),
+        joinedload(Minifigure.photos),
         joinedload(Minifigure.tags)
     ).filter(Minifigure.minifigure_id == minifigure_id).first()
     if not one_minifigure:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Minifigure with id {minifigure_id} was not found")
+    
+    # Сортируем фотографии, чтобы главная фотография была первой
+    one_minifigure.photos = sorted(one_minifigure.photos, key=lambda photo: 0 if photo.is_main else 1)
+    
     return one_minifigure
 
 def update_db_minifigure(minifigure_id: str, minifigure_update: MinifigureUpdate, db: Session) -> Minifigure:
@@ -93,7 +104,7 @@ def update_db_minifigure(minifigure_id: str, minifigure_update: MinifigureUpdate
         setattr(db_minifigure, key, value)
     try:
         db.commit()
-        return db.query(Minifigure).options(joinedload(Minifigure.face_photo)).filter(Minifigure.minifigure_id == minifigure_id).first()
+        return db.query(Minifigure).options(joinedload(Minifigure.face_photo), joinedload(Minifigure.photos)).filter(Minifigure.minifigure_id == minifigure_id).first()
     except IntegrityError as e:
         db.rollback()
         if isinstance(e.orig, UniqueViolation):

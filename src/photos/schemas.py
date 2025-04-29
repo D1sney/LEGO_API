@@ -9,22 +9,7 @@ class PhotoBase(BaseModel):
     is_main: bool = Field(False, description="Является ли фото основным для набора/минифигурки")
 
 class PhotoCreate(PhotoBase):
-    @field_validator("set_id", mode="before")
-    @classmethod
-    def parse_set_id(cls, value):
-        if isinstance(value, str) and not value.strip():
-            return None
-        try:
-            return int(value) if value is not None else None
-        except (ValueError, TypeError):
-            raise ValueError("set_id должен быть целым числом или пустым")
-    
-    @field_validator("minifigure_id", mode="before")
-    @classmethod
-    def parse_minifigure_id(cls, value):
-        if isinstance(value, str) and not value.strip():
-            return None
-        return value
+    pass
 
 class PhotoUpdate(BaseModel):
     set_id: Optional[int] = Field(None, description="ID набора LEGO, к которому относится фото", example=75968)
@@ -32,22 +17,6 @@ class PhotoUpdate(BaseModel):
     photo_url: Optional[str] = Field(None, description="URL фотографии", example="https://example.com/images/hogwarts.jpg")
     is_main: Optional[bool] = Field(None, description="Является ли фото основным для набора/минифигурки")
     
-    @field_validator("set_id", mode="before")
-    @classmethod
-    def parse_set_id(cls, value):
-        if isinstance(value, str) and not value.strip():
-            return None
-        try:
-            return int(value) if value is not None else None
-        except (ValueError, TypeError):
-            raise ValueError("set_id должен быть целым числом или пустым")
-    
-    @field_validator("minifigure_id", mode="before")
-    @classmethod
-    def parse_minifigure_id(cls, value):
-        if isinstance(value, str) and not value.strip():
-            return None
-        return value
 
 class PhotoResponse(PhotoBase):
     photo_id: int = Field(..., description="Уникальный идентификатор фотографии")
@@ -66,6 +35,6 @@ class PhotoDelete(BaseModel):
     photo_id: int = Field(..., description="Уникальный идентификатор фотографии для удаления")
 
 class PhotoUploadData(BaseModel):
-    set_id: str = Field("", description="ID набора LEGO (оставьте пустым если не связано с набором)")
-    minifigure_id: str = Field("", description="ID минифигурки LEGO (оставьте пустым если не связано с минифигуркой)")
+    set_id: Optional[int] = Field(None, description="ID набора LEGO (оставьте пустым если не связано с набором)")
+    minifigure_id: Optional[str] = Field(None, description="ID минифигурки LEGO (оставьте пустым если не связано с минифигуркой)")
     is_main: bool = Field(False, description="Является ли фото основным")
