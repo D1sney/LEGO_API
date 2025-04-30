@@ -23,6 +23,7 @@ from src.sets.models import Set, SetMinifigure
 from src.minifigures.models import Minifigure
 from src.tags.models import Tag, SetTag, MinifigureTag
 from src.photos.models import Photo
+from src.users.models import User
 
 # Устанавливаем URL подключения из переменной SQLALCHEMY_DATABASE_URL
 config.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)

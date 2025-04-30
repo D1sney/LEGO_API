@@ -1,3 +1,4 @@
+# src/users/db.py
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
