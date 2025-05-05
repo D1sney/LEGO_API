@@ -11,10 +11,12 @@ from src.minifigures.db import (
     update_db_minifigure,
     delete_db_minifigure
 )
+from src.users.utils import get_current_active_user
 
 router = APIRouter(
     prefix="/minifigures",
-    tags=["Minifigures"]
+    tags=["Minifigures"],
+    dependencies=[Depends(get_current_active_user)]
 )
 
 @router.get(

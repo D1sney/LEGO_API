@@ -15,10 +15,12 @@ from src.photos.db import (
     delete_db_photo
 )
 from src.photos.utils import save_uploaded_file
+from src.users.utils import get_current_active_user
 
 router = APIRouter(
     prefix="/photos",
-    tags=["Photos"]
+    tags=["Photos"],
+    dependencies=[Depends(get_current_active_user)]
 )
 
 

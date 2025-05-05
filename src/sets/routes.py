@@ -13,10 +13,12 @@ from src.sets.db import (
     create_db_set_minifigure,
     delete_db_set_minifigure
 )
+from src.users.utils import get_current_active_user
 
 router = APIRouter(
     prefix="/sets",
-    tags=["Sets"]
+    tags=["Sets"],
+    dependencies=[Depends(get_current_active_user)]
 )
 
 @router.get(

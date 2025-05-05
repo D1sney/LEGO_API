@@ -14,6 +14,7 @@ from src.minifigures.routes import router as minifigures_router
 from src.tags.routes import router as tags_router
 from src.photos.routes import router as photos_router
 from src.users.routes import router as users_router
+from fastapi.middleware.cors import CORSMiddleware
 
 # Создаем таблицы в базе данных
 # Base.metadata.create_all(bind=engine)
@@ -36,6 +37,15 @@ app = FastAPI(
 
 # Подключаем папку static для раздачи файлов
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Настройка CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # В продакшене лучше указать конкретные домены
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Подключаем маршруты
 app.include_router(sets_router)

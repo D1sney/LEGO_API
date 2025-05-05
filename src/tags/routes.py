@@ -15,10 +15,12 @@ from src.tags.db import (
     create_db_minifigure_tag,
     delete_db_minifigure_tag
 )
+from src.users.utils import get_current_active_user
 
 router = APIRouter(
     prefix="/tags",
-    tags=["Tags"]
+    tags=["Tags"],
+    dependencies=[Depends(get_current_active_user)]
 )
 
 @router.get(
