@@ -18,3 +18,5 @@ class Minifigure(Base):
     photos = relationship("Photo", back_populates="minifigure", foreign_keys="Photo.minifigure_id")
     # Явная связь с тегами через minifigure_tags
     tags = relationship("Tag", secondary="minifigure_tags", back_populates="minifigures")
+    # Связь с турнирами (минифигурки в турнирах)
+    tournament_participants = relationship("TournamentParticipant", back_populates="minifigure")

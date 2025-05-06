@@ -23,6 +23,8 @@ class Set(Base):
     photos = relationship("Photo", back_populates="set", foreign_keys="Photo.set_id")
     # Явная связь с тегами через set_tags
     tags = relationship("Tag", secondary="set_tags", back_populates="sets")
+    # Связь с турнирами (наборы в турнирах)
+    tournament_participants = relationship("TournamentParticipant", back_populates="set")
 
 class SetMinifigure(Base):
     __tablename__ = "set_minifigures"
