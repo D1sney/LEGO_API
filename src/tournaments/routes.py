@@ -21,7 +21,8 @@ from src.tournaments.db import (
     get_db_tournament_with_pairs,
     get_db_tournaments
 )
-from src.users.utils import get_current_user
+from src.users.utils import get_current_user, get_admin_user
+from src.users.models import User
 
 router = APIRouter(
     prefix="/tournaments",
@@ -33,7 +34,7 @@ router = APIRouter(
 def create_new_tournament(
     tournament_data: TournamentCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_admin_user)
 ):
     """
     Создание нового турнира.
@@ -49,13 +50,6 @@ def create_new_tournament(
     - **min_year**: Минимальный год выпуска для наборов (опционально)
     - **max_year**: Максимальный год выпуска для наборов (опционально)
     """
-    # Проверяем, что пользователь имеет права администратора
-    if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Недостаточно прав для создания турнира"
-        )
-    
     return create_tournament(db, tournament_data)
 
 @router.get("/", response_model=List[TournamentListResponse])
@@ -130,7 +124,7 @@ def vote_for_participant(
 def advance_to_next_stage(
     tournament_id: int = Path(..., description="ID турнира"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_admin_user)
 ):
     """
     Продвижение турнира на следующую стадию.
@@ -138,20 +132,13 @@ def advance_to_next_stage(
     
     - **tournament_id**: ID турнира
     """
-    # Проверяем, что пользователь имеет права администратора
-    if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Недостаточно прав для продвижения турнира"
-        )
-    
     return advance_tournament_stage(db, tournament_id)
 
 @router.delete("/{tournament_id}", response_model=TournamentActionResponse)
 def delete_tournament(
     tournament_id: int = Path(..., description="ID турнира"),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user: User = Depends(get_admin_user)
 ):
     """
     Удаление турнира.
@@ -159,13 +146,6 @@ def delete_tournament(
     
     - **tournament_id**: ID турнира
     """
-    # Проверяем, что пользователь имеет права администратора
-    if not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Недостаточно прав для удаления турнира"
-        )
-    
     tournament = get_db_tournament(db, tournament_id)
     if not tournament:
         raise HTTPException(

@@ -34,8 +34,8 @@ class TournamentParticipant(Base):
 
     # Связи
     tournament = relationship("Tournament", back_populates="participants")
-    set = relationship("Set", backref="tournament_participants")
-    minifigure = relationship("Minifigure", backref="tournament_participants")
+    set = relationship("Set", back_populates="tournament_participants")
+    minifigure = relationship("Minifigure", back_populates="tournament_participants")
 
     __table_args__ = (
         UniqueConstraint("tournament_id", "set_id", "minifigure_id"),
@@ -74,7 +74,7 @@ class TournamentVote(Base):
 
     # Связи
     pair = relationship("TournamentPair", back_populates="votes")
-    user = relationship("User", backref="tournament_votes")
+    user = relationship("User", back_populates="tournament_votes")
     voted_participant = relationship("TournamentParticipant")
 
     __table_args__ = (

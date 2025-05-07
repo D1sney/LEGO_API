@@ -1,6 +1,7 @@
 # src/users/models.py
 from sqlalchemy import Column, String, Boolean, DateTime, Integer, Enum
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 import uuid
 from src.database import Base
 import enum
@@ -21,3 +22,6 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), default=func.now())
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     login_attempts = Column(Integer, default=0)
+    
+    # Связь с голосами в турнирах
+    tournament_votes = relationship("TournamentVote", back_populates="user")
