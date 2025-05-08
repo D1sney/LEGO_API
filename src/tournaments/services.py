@@ -154,10 +154,10 @@ def advance_tournament_stage(db: Session, tournament_id: int) -> Dict[str, str]:
         )
     
     # Проверяем, что время текущей стадии истекло
-    if datetime.utcnow() < tournament.stage_deadline:
+    if datetime.now(timezone.utc) < tournament.stage_deadline:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Текущая стадия еще не завершена. Осталось: {tournament.stage_deadline - datetime.utcnow()}"
+            detail=f"Текущая стадия еще не завершена. Осталось: {tournament.stage_deadline - datetime.now(timezone.utc)}"
         )
     
     # Получаем пары текущей стадии

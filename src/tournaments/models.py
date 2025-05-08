@@ -12,7 +12,7 @@ class Tournament(Base):
     title = Column(String, nullable=False)
     type = Column(String, nullable=False)
     current_stage = Column(String, nullable=False)
-    stage_deadline = Column(DateTime, nullable=False)
+    stage_deadline = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=func.now())
 
     # Связи
@@ -68,7 +68,7 @@ class TournamentVote(Base):
 
     vote_id = Column(Integer, primary_key=True)
     pair_id = Column(Integer, ForeignKey("tournament_pairs.pair_id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
     voted_for = Column(Integer, ForeignKey("tournament_participants.participant_id", ondelete="CASCADE"), nullable=False)
     created_at = Column(DateTime(timezone=True), default=func.now())
 
