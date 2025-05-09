@@ -1,3 +1,4 @@
+# src/tournaments/routes.py
 from fastapi import APIRouter, Depends, Path, Query, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional

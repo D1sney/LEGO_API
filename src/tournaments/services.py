@@ -70,7 +70,7 @@ def create_tournament(db: Session, tournament_data: TournamentCreate) -> Tournam
     db.flush()
     
     # Генерируем пары для первой стадии
-    generate_tournament_pairs(db, tournament, tournament_participants)
+    generate_tournament_pairs(db, tournament, tournament_participants, first_stage, target_num)
     
     db.commit()
     return tournament

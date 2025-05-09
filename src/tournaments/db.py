@@ -1,3 +1,4 @@
+# src/tournaments/db.py
 from sqlalchemy.orm import Session, joinedload, contains_eager
 from sqlalchemy import and_, or_, func
 from datetime import datetime

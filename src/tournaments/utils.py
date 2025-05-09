@@ -1,3 +1,4 @@
+# src/tournaments/utils.py
 import random
 import math
 from datetime import datetime, timedelta
@@ -81,25 +82,34 @@ def determine_first_stage(num_participants: int) -> str:
 def generate_tournament_pairs(
     db: Session,
     tournament: Tournament,
-    participants: List[TournamentParticipant]
+    participants: List[TournamentParticipant],
+    first_stage: str,
+    target_num: int
 ) -> List[TournamentPair]:
     """
     Генерация пар для первой стадии турнира
     """
+    # Создаём список пар
     pairs = []
-    for i in range(0, len(participants), 2):
-        participant1 = participants[i]
-        # Если число участников нечетное, последняя пара будет иметь только одного участника
-        participant2 = participants[i + 1] if i + 1 < len(participants) else None
-        
-        pair = TournamentPair(
+    num_pairs = target_num // 2
+    participant_index = 0
+
+    # Шаг 1: Заполняем participant1 для каждой пары
+    for _ in range(num_pairs):
+        participant1_id = participants[participant_index].participant_id if participant_index < len(participants) else None
+        pairs.append(TournamentPair(
             tournament_id=tournament.tournament_id,
-            stage=tournament.current_stage,
-            participant1_id=participant1.participant_id,
-            participant2_id=participant2.participant_id if participant2 else None
-        )
-        pairs.append(pair)
-    
+            stage=first_stage,
+            participant1_id=participant1_id
+        ))
+        participant_index += 1
+
+    # Шаг 2: Заполняем participant2 для каждой пары, если участники остались
+    for i, pair in enumerate(pairs):
+        if participant_index < len(participants):
+            pair.participant2_id = participants[participant_index].participant_id
+            participant_index += 1
+
     db.add_all(pairs)
     db.flush()
     return pairs
