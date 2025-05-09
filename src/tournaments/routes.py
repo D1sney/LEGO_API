@@ -43,13 +43,13 @@ def create_new_tournament(
     - **title**: Название турнира
     - **type**: Тип турнира ('sets' или 'minifigures')
     - **search**: Поиск по имени (опционально)
-    - **theme**: Фильтр по теме наборов (опционально)
-    - **sub_theme**: Фильтр по подтеме наборов (опционально)
-    - **tag_name**: Фильтр по тегу (опционально)
+    - **tag_names**: Фильтр по тегам через запятую (опционально)
+    - **tag_logic**: Логика для тегов ('AND' или 'OR', опционально)
     - **min_price**: Минимальная цена (опционально)
     - **max_price**: Максимальная цена (опционально)
-    - **min_year**: Минимальный год выпуска для наборов (опционально)
-    - **max_year**: Максимальный год выпуска для наборов (опционально)
+    - **min_piece_count**: Минимальное количество деталей для наборов (опционально)
+    - **max_piece_count**: Максимальное количество деталей для наборов (опционально)
+    - **stage_duration_hours**: Длительность каждой стадии турнира в часах (по умолчанию 24)
     """
     return create_tournament(db, tournament_data)
 
@@ -124,6 +124,7 @@ def vote_for_participant(
 @router.post("/{tournament_id}/advance", response_model=TournamentActionResponse)
 def advance_to_next_stage(
     tournament_id: int = Path(..., description="ID турнира"),
+    duration_hours: Optional[int] = Query(None, description="Длительность следующей стадии в часах"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
@@ -132,8 +133,9 @@ def advance_to_next_stage(
     Требуются права администратора.
     
     - **tournament_id**: ID турнира
+    - **duration_hours**: Длительность следующей стадии в часах (если не указано, используется 24 часа)
     """
-    return advance_tournament_stage(db, tournament_id)
+    return advance_tournament_stage(db, tournament_id, duration_hours)
 
 @router.delete("/{tournament_id}", response_model=TournamentActionResponse)
 def delete_tournament(

@@ -50,7 +50,7 @@ def create_tournament(db: Session, tournament_data: TournamentCreate) -> Tournam
         title=tournament_data.title,
         type=tournament_data.type,
         current_stage=first_stage,
-        stage_deadline=datetime.now(timezone.utc) + timedelta(days=1)  # 1 день на стадию
+        stage_deadline=datetime.now(timezone.utc) + timedelta(hours=tournament_data.stage_duration_hours)  # Используем указанное количество часов
     )
     db.add(tournament)
     db.flush()
@@ -134,9 +134,14 @@ def vote_in_tournament(
     
     return {"message": "Голос успешно учтен"}
 
-def advance_tournament_stage(db: Session, tournament_id: int) -> Dict[str, str]:
+def advance_tournament_stage(db: Session, tournament_id: int, duration_hours: Optional[int] = None) -> Dict[str, str]:
     """
     Продвижение турнира на следующую стадию
+    
+    Args:
+        db: Сессия базы данных
+        tournament_id: ID турнира
+        duration_hours: Длительность следующей стадии в часах (если не указано, используется 24 часа)
     """
     # Проверяем существование турнира
     tournament = get_db_tournament(db, tournament_id)
@@ -189,7 +194,9 @@ def advance_tournament_stage(db: Session, tournament_id: int) -> Dict[str, str]:
         return {"message": "Турнир успешно завершен"}
     
     # Устанавливаем новый дедлайн для следующей стадии
-    tournament.stage_deadline = datetime.now(timezone.utc) + timedelta(days=1)
+    # Если duration_hours ровно или меньше 0, используем 24 часа (1 день)
+    hours = duration_hours if duration_hours is not None and duration_hours > 0 else 24
+    tournament.stage_deadline = datetime.now(timezone.utc) + timedelta(hours=hours)
     
     # Создаем пары для следующей стадии
     generate_next_stage_pairs(db, tournament, winner_ids)

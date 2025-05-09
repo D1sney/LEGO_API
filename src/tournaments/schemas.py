@@ -19,6 +19,7 @@ class TournamentCreate(BaseModel):
     max_price: Optional[float] = Field(None, description="Максимальная цена")
     min_piece_count: Optional[int] = Field(None, description="Минимальное количество деталей (для наборов)")
     max_piece_count: Optional[int] = Field(None, description="Максимальное количество деталей (для наборов)")
+    stage_duration_hours: Optional[int] = Field(24, description="Длительность каждой стадии турнира в часах")
 
     @field_validator("type")
     def validate_type(cls, v):
@@ -30,6 +31,12 @@ class TournamentCreate(BaseModel):
     def validate_tag_logic(cls, v):
         if v not in ["AND", "OR"]:
             raise ValueError("Логика для тегов должна быть 'AND' или 'OR'")
+        return v
+
+    @field_validator("stage_duration_hours")
+    def validate_duration(cls, v):
+        if v <= 0:
+            raise ValueError("Длительность стадии должна быть положительным числом")
         return v
 
 class TournamentVoteCreate(BaseModel):
