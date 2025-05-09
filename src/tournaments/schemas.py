@@ -13,18 +13,23 @@ class TournamentCreate(BaseModel):
     type: str = Field(..., description="Тип турнира: 'sets' или 'minifigures'")
     # Параметры для фильтрации
     search: Optional[str] = Field(None, description="Поиск по имени")
-    theme: Optional[str] = Field(None, description="Фильтр по теме (для наборов)")
-    sub_theme: Optional[str] = Field(None, description="Фильтр по подтеме (для наборов)")
-    tag_name: Optional[str] = Field(None, description="Фильтр по тегу")
+    tag_names: Optional[str] = Field(None, description="Фильтр по тегам (через запятую)")
+    tag_logic: Optional[str] = Field("AND", description="Логика для тегов: 'AND' (все теги должны совпадать) или 'OR' (любой из тегов)")
     min_price: Optional[float] = Field(None, description="Минимальная цена")
     max_price: Optional[float] = Field(None, description="Максимальная цена")
-    min_year: Optional[int] = Field(None, description="Минимальный год выпуска (для наборов)")
-    max_year: Optional[int] = Field(None, description="Максимальный год выпуска (для наборов)")
+    min_piece_count: Optional[int] = Field(None, description="Минимальное количество деталей (для наборов)")
+    max_piece_count: Optional[int] = Field(None, description="Максимальное количество деталей (для наборов)")
 
     @field_validator("type")
     def validate_type(cls, v):
         if v not in ["sets", "minifigures"]:
             raise ValueError("Тип турнира должен быть 'sets' или 'minifigures'")
+        return v
+
+    @field_validator("tag_logic")
+    def validate_tag_logic(cls, v):
+        if v not in ["AND", "OR"]:
+            raise ValueError("Логика для тегов должна быть 'AND' или 'OR'")
         return v
 
 class TournamentVoteCreate(BaseModel):

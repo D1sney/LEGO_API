@@ -3,6 +3,7 @@ import math
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple, Union
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from src.tournaments.models import Tournament, TournamentParticipant, TournamentPair, TournamentVote
 from src.sets.db import get_db_sets
@@ -21,13 +22,12 @@ def get_tournament_participants(
         filters = {
             "limit": 1000,  # Большой лимит для получения всех подходящих наборов
             "search": tournament_data.search,
-            "theme": tournament_data.theme,
-            "sub_theme": tournament_data.sub_theme,
-            "tag_name": tournament_data.tag_name,
+            "tag_names": tournament_data.tag_names,
+            "tag_logic": tournament_data.tag_logic,
             "min_price": tournament_data.min_price,
             "max_price": tournament_data.max_price,
-            "min_year": tournament_data.min_year,
-            "max_year": tournament_data.max_year
+            "min_piece_count": tournament_data.min_piece_count if hasattr(tournament_data, "min_piece_count") else None,
+            "max_piece_count": tournament_data.max_piece_count if hasattr(tournament_data, "max_piece_count") else None,
         }
         # Удаляем None значения
         filters = {k: v for k, v in filters.items() if v is not None}
@@ -38,7 +38,8 @@ def get_tournament_participants(
         filters = {
             "limit": 1000,
             "search": tournament_data.search,
-            "tag_name": tournament_data.tag_name,
+            "tag_names": tournament_data.tag_names,
+            "tag_logic": tournament_data.tag_logic,
             "min_price": tournament_data.min_price,
             "max_price": tournament_data.max_price
         }
@@ -132,7 +133,7 @@ def calculate_winners(db: Session, pairs: List[TournamentPair]) -> List[int]:
         # Подсчет голосов
         votes = db.query(
             TournamentVote.voted_for,
-            db.func.count(TournamentVote.voted_for).label("vote_count")
+            func.count(TournamentVote.voted_for).label("vote_count")
         ).filter(
             TournamentVote.pair_id == pair.pair_id
         ).group_by(TournamentVote.voted_for).all()
