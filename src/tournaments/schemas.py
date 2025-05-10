@@ -60,7 +60,7 @@ class TournamentParticipantResponse(TournamentParticipantBase):
 
 class TournamentVoteResponse(BaseModel):
     vote_id: int
-    user_id: int
+    user_id: str
     voted_for: int
     created_at: datetime
 

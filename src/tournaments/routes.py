@@ -10,7 +10,8 @@ from src.tournaments.schemas import (
     TournamentResponse,
     TournamentListResponse,
     TournamentVoteCreate,
-    TournamentActionResponse
+    TournamentActionResponse,
+    TournamentPairResponse
 )
 from src.tournaments.services import (
     create_tournament,
@@ -20,7 +21,8 @@ from src.tournaments.services import (
 from src.tournaments.db import (
     get_db_tournament,
     get_db_tournament_with_pairs,
-    get_db_tournaments
+    get_db_tournaments,
+    get_db_tournament_pair_with_details
 )
 from src.users.utils import get_current_user, get_admin_user
 from src.users.models import User
@@ -160,3 +162,22 @@ def delete_tournament(
     db.commit()
     
     return {"message": f"Турнир с ID {tournament_id} успешно удален"}
+
+@router.get("/pairs/{pair_id}", response_model=TournamentPairResponse)
+def get_tournament_pair(
+    pair_id: int = Path(..., description="ID пары турнира"),
+    db: Session = Depends(get_db)
+):
+    """
+    Получение информации о паре турнира по ID.
+    
+    - **pair_id**: ID пары турнира
+    """
+    pair = get_db_tournament_pair_with_details(db, pair_id)
+    if not pair:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Пара с ID {pair_id} не найдена"
+        )
+    
+    return pair

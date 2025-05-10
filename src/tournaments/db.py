@@ -103,3 +103,23 @@ def create_db_tournament_vote(db: Session, pair_id: int, user_id: int, voted_for
     db.commit()
     db.refresh(vote)
     return vote
+
+def get_db_tournament_pair_with_details(db: Session, pair_id: int) -> Optional[TournamentPair]:
+    """Получение пары по ID с полной информацией об участниках и голосах"""
+    return (
+        db.query(TournamentPair)
+        .options(
+            joinedload(TournamentPair.participant1)
+        )
+        .options(
+            joinedload(TournamentPair.participant2)
+        )
+        .options(
+            joinedload(TournamentPair.winner)
+        )
+        .options(
+            joinedload(TournamentPair.votes)
+        )
+        .filter(TournamentPair.pair_id == pair_id)
+        .first()
+    )
