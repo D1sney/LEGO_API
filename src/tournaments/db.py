@@ -23,7 +23,7 @@ def get_db_tournament_with_participants(db: Session, tournament_id: int) -> Opti
 
 def get_db_tournament_with_pairs(db: Session, tournament_id: int) -> Optional[Tournament]:
     """Получение турнира по ID с парами"""
-    return (
+    tournament = (
         db.query(Tournament)
         .options(
             joinedload(Tournament.pairs)
@@ -44,6 +44,13 @@ def get_db_tournament_with_pairs(db: Session, tournament_id: int) -> Optional[To
         .filter(Tournament.tournament_id == tournament_id)
         .first()
     )
+    if tournament:
+        for pair in tournament.pairs:
+            # Подсчитываем голоса для каждой пары
+            votes = get_db_participant_votes(db, pair.pair_id)
+            pair.votes_for_participant1 = votes.get(pair.participant1_id, 0)
+            pair.votes_for_participant2 = votes.get(pair.participant2_id, 0) if pair.participant2_id else 0
+    return tournament
 
 def get_db_tournaments(
     db: Session, 
@@ -106,7 +113,7 @@ def create_db_tournament_vote(db: Session, pair_id: int, user_id: int, voted_for
 
 def get_db_tournament_pair_with_details(db: Session, pair_id: int) -> Optional[TournamentPair]:
     """Получение пары по ID с полной информацией об участниках и голосах"""
-    return (
+    pair = (
         db.query(TournamentPair)
         .options(
             joinedload(TournamentPair.participant1)
@@ -123,3 +130,9 @@ def get_db_tournament_pair_with_details(db: Session, pair_id: int) -> Optional[T
         .filter(TournamentPair.pair_id == pair_id)
         .first()
     )
+    if pair:
+        # Подсчитываем голоса для каждой пары
+        votes = get_db_participant_votes(db, pair.pair_id)
+        pair.votes_for_participant1 = votes.get(pair.participant1_id, 0)
+        pair.votes_for_participant2 = votes.get(pair.participant2_id, 0) if pair.participant2_id else 0
+    return pair

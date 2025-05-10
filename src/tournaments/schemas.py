@@ -82,6 +82,8 @@ class TournamentPairResponse(TournamentPairBase):
     participant2: Optional[TournamentParticipantResponse] = None
     winner: Optional[TournamentParticipantResponse] = None
     votes: List[TournamentVoteResponse] = []
+    votes_for_participant1: Optional[int] = None
+    votes_for_participant2: Optional[int] = None
 
 class TournamentBase(BaseModel):
     tournament_id: int
