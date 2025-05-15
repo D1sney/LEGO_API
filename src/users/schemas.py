@@ -28,7 +28,10 @@ class UserLogin(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
+    expires_in: int  # Время жизни access token в секундах
+    refresh_expires_in: int  # Время жизни refresh token в секундах
     
 class TokenData(BaseModel):
     user_id: str

@@ -10,7 +10,8 @@ class Settings(BaseSettings):
     DB_PASS: str
     SECRET_KEY: str
     ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     BASE_URL: str
 
     class Config:

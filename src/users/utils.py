@@ -1,32 +1,34 @@
 # src/users/utils.py
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, Dict, Any
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
+import uuid
+from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
+from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+
 from src.config import settings
 from src.database import get_db
-from src.users.schemas import TokenData
-from src.users.models import User
+from src.users.models import User, RefreshToken
+from src.users.db import get_user_by_id
 
 # Настройка для хеширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# OAuth2 с использованием Bearer Token
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+# Настройка OAuth2
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
-def verify_password(plain_password, hashed_password):
-    """Проверка соответствия пароля хешу"""
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Проверка пароля"""
     return pwd_context.verify(plain_password, hashed_password)
 
-def get_password_hash(password):
-    """Получение хеша пароля"""
+def get_password_hash(password: str) -> str:
+    """Хеширование пароля"""
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """Создание JWT-токена"""
+def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+    """Создание access токена"""
     to_encode = data.copy()
     
     if expires_delta:
@@ -38,11 +40,53 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    """Получение текущего пользователя по JWT-токену"""
+def create_refresh_token(db: Session, user_id: str) -> tuple[str, datetime]:
+    """Создание refresh токена и сохранение его в базе данных"""
+    token = str(uuid.uuid4())
+    expires_at = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    
+    db_token = RefreshToken(
+        token=token,
+        user_id=user_id,
+        expires_at=expires_at
+    )
+    db.add(db_token)
+    db.commit()
+    db.refresh(db_token)
+    
+    return token, expires_at
+
+def verify_refresh_token(db: Session, token: str) -> RefreshToken:
+    """Проверка refresh токена"""
+    db_token = db.query(RefreshToken).filter(RefreshToken.token == token).first()
+    if not db_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Недействительный refresh токен",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if db_token.revoked:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh токен был аннулирован",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if db_token.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Срок действия refresh токена истёк",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return db_token
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+    """Получение текущего пользователя по access токену"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Не удалось подтвердить учетные данные",
+        detail="Не удалось проверить учетные данные",
         headers={"WWW-Authenticate": "Bearer"},
     )
     
@@ -53,41 +97,29 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         
         if user_id is None:
             raise credentials_exception
-        
-        token_data = TokenData(
-            user_id=user_id,
-            username=payload.get("username"),
-            role=payload.get("role"),
-            exp=payload.get("exp")
-        )
     except JWTError:
         raise credentials_exception
     
-    # Получение пользователя из базы данных
-    user = db.query(User).filter(User.user_id == token_data.user_id).first()
-    
+    user = get_user_by_id(db, user_id=user_id)
     if user is None:
         raise credentials_exception
     
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Пользователь неактивен"
-        )
-    
     return user
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    """Получение текущего активного пользователя"""
+def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
+    """Проверка, что текущий пользователь активен"""
     if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Пользователь неактивен")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Неактивный пользователь"
+        )
     return current_user
 
-async def get_admin_user(current_user: User = Depends(get_current_user)):
-    """Проверка, что текущий пользователь - администратор"""
+def get_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
+    """Проверка, что текущий пользователь — администратор"""
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Недостаточно прав для выполнения операции"
+            detail="Недостаточно прав"
         )
     return current_user

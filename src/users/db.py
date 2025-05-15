@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy import update
 
-from src.users.models import User
+from src.users.models import User, RefreshToken
 from src.users.schemas import UserCreate, UserUpdate
 from src.users.utils import get_password_hash, verify_password
 
@@ -147,3 +147,21 @@ def update_user(db: Session, user_id: str, user_update: UserUpdate) -> User:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Ошибка при обновлении пользователя"
         )
+
+def revoke_refresh_token(db: Session, token: str) -> bool:
+    """Аннулировать refresh токен"""
+    db_token = db.query(RefreshToken).filter(RefreshToken.token == token).first()
+    if not db_token:
+        return False
+    
+    db_token.revoked = True
+    db.commit()
+    return True
+
+def revoke_all_user_refresh_tokens(db: Session, user_id: str) -> None:
+    """Аннулировать все refresh токены пользователя"""
+    db.query(RefreshToken).filter(
+        RefreshToken.user_id == user_id,
+        RefreshToken.revoked == False
+    ).update({"revoked": True})
+    db.commit()
