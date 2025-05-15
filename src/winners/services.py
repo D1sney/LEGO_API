@@ -13,8 +13,11 @@ from src.winners.db import (
     create_db_tournament_winner,
     update_db_tournament_winner,
     delete_db_tournament_winner,
-    get_participant_details
+    get_participant_details,
+    count_participant_votes,
+    check_tournament_type
 )
+from src.tournaments.db import get_db_tournament
 
 def get_tournament_winners(
     db: Session, 
@@ -52,7 +55,7 @@ def create_tournament_winner_from_participant(
     Создание записи о победителе турнира на основе участника
     """
     # Проверяем существование турнира
-    tournament = db.query(Tournament).filter(Tournament.tournament_id == tournament_id).first()
+    tournament = get_db_tournament(db, tournament_id)
     if not tournament:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -83,9 +86,7 @@ def create_tournament_winner_from_participant(
         )
     
     # Подсчитываем общее количество голосов за победителя за все стадии
-    total_votes = db.query(TournamentVote).filter(
-        TournamentVote.voted_for == participant_id
-    ).count()
+    total_votes = count_participant_votes(db, participant_id)
     
     # Создаем запись о победителе турнира
     winner = create_db_tournament_winner(
@@ -107,7 +108,7 @@ def create_tournament_winner(
     Ручное создание записи о победителе турнира
     """
     # Проверяем существование турнира
-    tournament = db.query(Tournament).filter(Tournament.tournament_id == tournament_id).first()
+    tournament = get_db_tournament(db, tournament_id)
     if not tournament:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -138,12 +139,9 @@ def create_tournament_winner(
     
     # Если указан set_id, проверяем его существование
     if winner_data.set_id is not None:
-        set_exists = db.query(Tournament).filter(
-            Tournament.tournament_id == tournament_id,
-            Tournament.type == "sets"
-        ).first()
+        set_tournament_check = check_tournament_type(db, tournament_id, "sets")
         
-        if not set_exists:
+        if not set_tournament_check:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Указанный турнир не является турниром наборов"
@@ -151,12 +149,9 @@ def create_tournament_winner(
     
     # Если указан minifigure_id, проверяем его существование
     if winner_data.minifigure_id is not None:
-        minifigure_exists = db.query(Tournament).filter(
-            Tournament.tournament_id == tournament_id,
-            Tournament.type == "minifigures"
-        ).first()
+        minifigure_tournament_check = check_tournament_type(db, tournament_id, "minifigures")
         
-        if not minifigure_exists:
+        if not minifigure_tournament_check:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Указанный турнир не является турниром минифигурок"
@@ -190,7 +185,7 @@ def update_tournament_winner(
         )
     
     # Получаем информацию о турнире
-    tournament = db.query(Tournament).filter(Tournament.tournament_id == winner.tournament_id).first()
+    tournament = get_db_tournament(db, winner.tournament_id)
     if not tournament:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

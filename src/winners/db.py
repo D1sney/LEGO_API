@@ -4,8 +4,8 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 
 from src.winners.models import TournamentWinner
-from src.tournaments.models import Tournament
-from src.tournaments.models import TournamentParticipant
+from src.tournaments.models import Tournament, TournamentParticipant, TournamentVote
+from src.tournaments.db import get_db_tournament
 
 def get_db_tournament_winner(db: Session, tournament_id: int) -> Optional[TournamentWinner]:
     """Получение победителя турнира по ID турнира"""
@@ -122,3 +122,19 @@ def get_participant_details(db: Session, participant_id: int) -> Tuple[Optional[
         return None, None
     
     return participant.set_id, participant.minifigure_id 
+
+# Новые функции для избежания прямых запросов в services.py
+
+def count_participant_votes(db: Session, participant_id: int) -> int:
+    """Подсчитывает общее количество голосов за участника"""
+    return db.query(TournamentVote).filter(
+        TournamentVote.voted_for == participant_id
+    ).count()
+
+def check_tournament_type(db: Session, tournament_id: int, expected_type: str) -> bool:
+    """Проверяет, соответствует ли тип турнира ожидаемому типу"""
+    tournament = db.query(Tournament).filter(
+        Tournament.tournament_id == tournament_id,
+        Tournament.type == expected_type
+    ).first()
+    return tournament is not None 
