@@ -24,6 +24,9 @@ from src.tournaments.utils import (
     generate_next_stage_pairs
 )
 
+# Импортируем функции из нового модуля winners
+from src.winners.db import create_db_tournament_winner, get_participant_details
+
 def create_tournament(db: Session, tournament_data: TournamentCreate) -> Tournament:
     """
     Создание нового турнира
@@ -190,6 +193,29 @@ def advance_tournament_stage(db: Session, tournament_id: int, duration_hours: Op
     # Если это финал и он уже сыгран, отмечаем турнир как завершенный
     if next_stage == "completed":
         tournament.stage_deadline = datetime.now(timezone.utc)
+        
+        # Определяем победителя турнира (финалиста)
+        if pairs and len(pairs) == 1 and pairs[0].winner_id:
+            # Получаем информацию о победителе
+            winner_participant_id = pairs[0].winner_id
+            
+            # Получаем set_id и minifigure_id победителя
+            set_id, minifigure_id = get_participant_details(db, winner_participant_id)
+            
+            # Подсчитываем общее количество голосов за победителя за все стадии
+            total_votes = db.query(TournamentVote).filter(
+                TournamentVote.voted_for == winner_participant_id
+            ).count()
+            
+            # Создаем запись о победителе турнира через новый модуль winners
+            create_db_tournament_winner(
+                db, 
+                tournament_id=tournament_id,
+                set_id=set_id,
+                minifigure_id=minifigure_id,
+                total_votes=total_votes
+            )
+        
         db.commit()
         return {"message": "Турнир успешно завершен"}
     

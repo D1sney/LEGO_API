@@ -25,6 +25,7 @@ from src.tags.models import Tag, SetTag, MinifigureTag
 from src.photos.models import Photo
 from src.users.models import User
 from src.tournaments.models import Tournament, TournamentParticipant, TournamentPair, TournamentVote
+from src.winners.models import TournamentWinner
 
 # Устанавливаем URL подключения из переменной SQLALCHEMY_DATABASE_URL
 config.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)

@@ -9,6 +9,7 @@ from src.tags.models import Tag, SetTag, MinifigureTag
 from src.photos.models import Photo
 from src.users.models import User
 from src.tournaments.models import Tournament, TournamentParticipant, TournamentPair, TournamentVote
+from src.winners.models import TournamentWinner
 from sqlalchemy.orm import Session
 from src.sets.routes import router as sets_router
 from src.minifigures.routes import router as minifigures_router
@@ -16,6 +17,7 @@ from src.tags.routes import router as tags_router
 from src.photos.routes import router as photos_router
 from src.users.routes import router as users_router
 from src.tournaments.routes import router as tournaments_router
+from src.winners.routes import router as winners_router
 from fastapi.middleware.cors import CORSMiddleware
 
 # Создаем таблицы в базе данных
@@ -56,6 +58,7 @@ app.include_router(tags_router)
 app.include_router(photos_router)
 app.include_router(users_router)
 app.include_router(tournaments_router)
+app.include_router(winners_router)
 
 @app.get("/")
 def read_root(db: Session = Depends(get_db)):
