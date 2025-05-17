@@ -49,6 +49,16 @@ try:
 except Exception as e:
     print("Ошибка при получении тегов:", e)
 
+# Проверка содержимого таблицы refresh_tokens
+try:
+    result = conn.execute(text("SELECT * FROM refresh_tokens"))
+    tokens = [row for row in result]
+    print("\nRefresh токены в базе данных:")
+    for token in tokens:
+        print(token)
+except Exception as e:
+    print("\nОшибка при получении refresh токенов:", e)
+
 # Закрытие соединения
 conn.close()
 print("\nПроверка завершена") 

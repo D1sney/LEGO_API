@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session
 from src.config import settings
 from src.database import get_db
 from src.users.models import User, RefreshToken
-from src.users.db import get_user_by_id
 
 # Настройка для хеширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -100,7 +99,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
     
-    user = get_user_by_id(db, user_id=user_id)
+    user = db.query(User).filter(User.user_id == user_id).first()
     if user is None:
         raise credentials_exception
     
