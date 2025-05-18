@@ -11,6 +11,7 @@ from src.users.utils import create_access_token, create_refresh_token, verify_re
 from src.users.models import User, RefreshToken
 from src.database import get_db
 from src.config import settings
+from src.logger import app_logger
 
 router = APIRouter(
     prefix="/users",
@@ -26,7 +27,14 @@ router = APIRouter(
 )
 async def register(user: UserCreate, db: Session = Depends(get_db)):
     """Регистрация нового пользователя"""
-    return create_user(db=db, user=user)
+    # Лишние строчки только для логов, можно выводить эти логи из db.py, но принято логировать бизнес логику именно на этом уровне, больше строчек, но за то понятнее
+    try:
+        new_user = create_user(db=db, user=user)
+        app_logger.info(f"User registered: {new_user.username} ({new_user.email})")
+        return new_user
+    except HTTPException as exc:
+        app_logger.warning(f"Registration failed for {user.email}: {exc.detail}")
+        raise
 
 @router.post(
     "/login", 
@@ -37,8 +45,8 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Аутентификация пользователя и получение токенов"""
     user = authenticate_user(db, form_data.username, form_data.password)
-    
     if not user:
+        app_logger.warning(f"Login failed for {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверное имя пользователя или пароль",
@@ -46,6 +54,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         )
     
     # Создание access токена
+    app_logger.info(f"User logged in: {user.username}")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.user_id, "username": user.username, "role": user.role},
@@ -54,7 +63,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     
     # Создание refresh токена
     refresh_token, refresh_expires_at = create_refresh_token(db, user.user_id)
-    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -114,11 +122,12 @@ async def logout(
 ):
     """Выход из системы (аннулирование refresh токена)"""
     if not revoke_refresh_token(db, refresh_token):
+        app_logger.warning(f"Logout failed: invalid refresh token for user {current_user.username}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Недействительный refresh токен"
         )
-    
+    app_logger.info(f"User logged out: {current_user.username}")
     return {"message": "Успешный выход из системы"}
 
 @router.post(
@@ -132,6 +141,7 @@ async def logout_all(
 ):
     """Выход из системы на всех устройствах (аннулирование всех refresh токенов)"""
     revoke_all_user_refresh_tokens(db, current_user.user_id)
+    app_logger.info(f"User logged out from all devices: {current_user.username}")
     return {"message": "Успешный выход из системы на всех устройствах"}
 
 @router.get(
@@ -156,7 +166,14 @@ async def update_user_me(
     db: Session = Depends(get_db)
 ):
     """Обновить информацию о текущем пользователе"""
-    return update_user(db=db, user_id=current_user.user_id, user_update=user_update)
+    # Лишние строчки только для логов, можно выводить эти логи из db.py, но принято логировать бизнес логику именно на этом уровне, больше строчек, но за то понятнее
+    try:
+        updated_user = update_user(db=db, user_id=current_user.user_id, user_update=user_update)
+        app_logger.info(f"User updated profile: {updated_user.username}")
+        return updated_user
+    except HTTPException as exc:
+        app_logger.warning(f"Profile update failed for {current_user.username}: {exc.detail}")
+        raise
 
 @router.get(
     "/", 
