@@ -134,7 +134,6 @@ def vote_in_tournament(
     
     # Создаем голос
     create_db_tournament_vote(db, vote_data.pair_id, user_id, vote_data.voted_for)
-    
     return {"message": "Голос успешно учтен"}
 
 def advance_tournament_stage(db: Session, tournament_id: int, duration_hours: Optional[int] = None) -> Dict[str, str]:

@@ -7,6 +7,7 @@ from typing import List
 from src.database import get_db, SessionLocal
 from src.tournaments.models import Tournament
 from src.tournaments.services import advance_tournament_stage
+from src.logger import app_logger
 
 # Создаем экземпляр Celery
 celery_app = Celery('tournaments_tasks')
@@ -17,6 +18,7 @@ def check_and_advance_tournaments():
     Задача для проверки и автоматического продвижения турниров на следующую стадию,
     если время текущей стадии истекло.
     """
+    app_logger.info("Старт фоновой задачи: проверка и продвижение турниров")
     db = SessionLocal()
     try:
         # Получаем все активные турниры, у которых истекло время стадии
@@ -28,11 +30,13 @@ def check_and_advance_tournaments():
         for tournament in tournaments:
             try:
                 advance_tournament_stage(db, tournament.tournament_id)
+                app_logger.info(f"Турнир {tournament.tournament_id} автоматически переведен на следующую стадию")
             except Exception as e:
                 # Логируем ошибку и продолжаем с другими турнирами
-                print(f"Ошибка при продвижении турнира {tournament.tournament_id}: {str(e)}")
+                app_logger.error(f"Ошибка при продвижении турнира {tournament.tournament_id}: {str(e)}")
     finally:
         db.close()
+        app_logger.info("Фоновая задача завершена: проверка и продвижение турниров")
 
 # Конфигурация Celery для задач по расписанию
 @celery_app.on_after_configure.connect

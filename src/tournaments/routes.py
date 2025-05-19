@@ -26,6 +26,7 @@ from src.tournaments.db import (
 )
 from src.users.utils import get_current_user, get_admin_user
 from src.users.models import User
+from src.logger import app_logger
 
 router = APIRouter(
     prefix="/tournaments",
@@ -53,7 +54,9 @@ def create_new_tournament(
     - **max_piece_count**: Максимальное количество деталей для наборов (опционально)
     - **stage_duration_hours**: Длительность каждой стадии турнира в часах (по умолчанию 24)
     """
-    return create_tournament(db, tournament_data)
+    tournament = create_tournament(db, tournament_data)
+    app_logger.info(f"Создан турнир: {tournament.title} (ID: {tournament.tournament_id})")
+    return tournament
 
 @router.get("/", response_model=List[TournamentListResponse])
 def get_tournaments(
@@ -70,6 +73,7 @@ def get_tournaments(
     - **type**: Фильтр по типу турнира ('sets' или 'minifigures')
     """
     tournaments = get_db_tournaments(db, skip, limit, type)
+    app_logger.info(f"Получено {len(tournaments)} турниров (skip={skip}, limit={limit}, type={type})")
     
     # Подсчитываем количество участников для каждого турнира
     result = []
@@ -100,11 +104,12 @@ def get_tournament(
     """
     tournament = get_db_tournament_with_pairs(db, tournament_id)
     if not tournament:
+        app_logger.warning(f"Турнир с ID {tournament_id} не найден")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Турнир с ID {tournament_id} не найден"
         )
-    
+    app_logger.info(f"Получен турнир ID: {tournament_id}")
     return tournament
 
 @router.post("/{tournament_id}/vote", response_model=TournamentActionResponse)
@@ -121,7 +126,9 @@ def vote_for_participant(
     - **pair_id**: ID пары
     - **voted_for**: ID участника, за которого голосует пользователь
     """
-    return vote_in_tournament(db, tournament_id, vote_data, current_user.user_id)
+    result = vote_in_tournament(db, tournament_id, vote_data, current_user.user_id)
+    app_logger.info(f"Пользователь {current_user.user_id} проголосовал в турнире {tournament_id} за пару {vote_data.pair_id}")
+    return result
 
 @router.post("/{tournament_id}/advance", response_model=TournamentActionResponse)
 def advance_to_next_stage(
@@ -137,7 +144,9 @@ def advance_to_next_stage(
     - **tournament_id**: ID турнира
     - **duration_hours**: Длительность следующей стадии в часах (если не указано, используется 24 часа)
     """
-    return advance_tournament_stage(db, tournament_id, duration_hours)
+    result = advance_tournament_stage(db, tournament_id, duration_hours)
+    app_logger.info(f"Турнир {tournament_id} переведен на следующую стадию")
+    return result
 
 @router.delete("/{tournament_id}", response_model=TournamentActionResponse)
 def delete_tournament(
@@ -153,6 +162,7 @@ def delete_tournament(
     """
     tournament = get_db_tournament(db, tournament_id)
     if not tournament:
+        app_logger.warning(f"Турнир с ID {tournament_id} не найден для удаления")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Турнир с ID {tournament_id} не найден"
@@ -160,6 +170,7 @@ def delete_tournament(
     
     db.delete(tournament)
     db.commit()
+    app_logger.info(f"Турнир с ID {tournament_id} удален")
     
     return {"message": f"Турнир с ID {tournament_id} успешно удален"}
 
@@ -175,9 +186,10 @@ def get_tournament_pair(
     """
     pair = get_db_tournament_pair_with_details(db, pair_id)
     if not pair:
+        app_logger.warning(f"Пара с ID {pair_id} не найдена")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Пара с ID {pair_id} не найдена"
         )
-    
+    app_logger.info(f"Получена пара турнира ID: {pair_id}")
     return pair

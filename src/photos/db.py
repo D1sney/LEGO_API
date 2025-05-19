@@ -5,11 +5,14 @@ from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import UniqueViolation, ForeignKeyViolation, NotNullViolation, CheckViolation
 from src.photos.models import Photo
 from src.photos.schemas import PhotoCreate, PhotoUpdate, PhotoDelete
+from src.logger import log_db_operation
 
+@log_db_operation
 def get_db_photos(db: Session, limit: int = 10, offset: int = 0) -> list[Photo]:
     photos = db.query(Photo).limit(limit).offset(offset).all()
     return photos
 
+@log_db_operation
 def create_db_photo(photo: PhotoCreate, db: Session) -> Photo:
     new_photo = Photo(**photo.dict())
     try:
@@ -30,12 +33,14 @@ def create_db_photo(photo: PhotoCreate, db: Session) -> Photo:
         else:
             raise HTTPException(status_code=400, detail="Integrity error")
 
+@log_db_operation
 def get_db_one_photo(db: Session, photo_id: int) -> Photo:
     one_photo = db.query(Photo).filter(Photo.photo_id == photo_id).first()
     if not one_photo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Photo with id {photo_id} was not found")
     return one_photo
 
+@log_db_operation
 def update_db_photo(photo_id: int, photo_update: PhotoUpdate, db: Session) -> Photo:
     db_photo = get_db_one_photo(db, photo_id)
     update_data = photo_update.dict(exclude_unset=True)
@@ -58,6 +63,7 @@ def update_db_photo(photo_id: int, photo_update: PhotoUpdate, db: Session) -> Ph
         else:
             raise HTTPException(status_code=400, detail="Integrity error")
 
+@log_db_operation
 def delete_db_photo(photo_delete: PhotoDelete, db: Session) -> dict:
     db_photo = get_db_one_photo(db, photo_delete.photo_id)
     db.delete(db_photo)

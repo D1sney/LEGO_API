@@ -7,11 +7,14 @@ from fastapi import HTTPException, status
 
 from src.tournaments.models import Tournament, TournamentParticipant, TournamentPair, TournamentVote
 from src.tournaments.schemas import TournamentCreate
+from src.logger import log_db_operation
 
+@log_db_operation
 def get_db_tournament(db: Session, tournament_id: int) -> Optional[Tournament]:
     """Получение турнира по ID с загрузкой всех связанных данных"""
     return db.query(Tournament).filter(Tournament.tournament_id == tournament_id).first()
 
+@log_db_operation
 def get_db_tournament_with_participants(db: Session, tournament_id: int) -> Optional[Tournament]:
     """Получение турнира по ID с участниками"""
     return (
@@ -21,6 +24,7 @@ def get_db_tournament_with_participants(db: Session, tournament_id: int) -> Opti
         .first()
     )
 
+@log_db_operation
 def get_db_tournament_with_pairs(db: Session, tournament_id: int) -> Optional[Tournament]:
     """Получение турнира по ID с парами"""
     tournament = (
@@ -52,6 +56,7 @@ def get_db_tournament_with_pairs(db: Session, tournament_id: int) -> Optional[To
             pair.votes_for_participant2 = votes.get(pair.participant2_id, 0) if pair.participant2_id else 0
     return tournament
 
+@log_db_operation
 def get_db_tournaments(
     db: Session, 
     skip: int = 0, 
@@ -66,10 +71,12 @@ def get_db_tournaments(
     
     return query.offset(skip).limit(limit).all()
 
+@log_db_operation
 def get_db_tournament_pair(db: Session, pair_id: int) -> Optional[TournamentPair]:
     """Получение пары по ID"""
     return db.query(TournamentPair).filter(TournamentPair.pair_id == pair_id).first()
 
+@log_db_operation
 def get_db_tournament_vote(db: Session, pair_id: int, user_id: int) -> Optional[TournamentVote]:
     """Проверка, голосовал ли пользователь за пару"""
     return db.query(TournamentVote).filter(
@@ -77,6 +84,7 @@ def get_db_tournament_vote(db: Session, pair_id: int, user_id: int) -> Optional[
         TournamentVote.user_id == user_id
     ).first()
 
+@log_db_operation
 def get_db_participant_votes(db: Session, pair_id: int) -> dict:
     """Получение количества голосов для каждого участника в паре"""
     votes = db.query(
@@ -88,6 +96,7 @@ def get_db_participant_votes(db: Session, pair_id: int) -> dict:
     
     return {voted_for: count for voted_for, count in votes}
 
+@log_db_operation
 def get_db_current_stage_pairs(db: Session, tournament_id: int) -> List[TournamentPair]:
     """Получение всех пар текущей стадии турнира"""
     tournament = get_db_tournament(db, tournament_id)
@@ -99,6 +108,7 @@ def get_db_current_stage_pairs(db: Session, tournament_id: int) -> List[Tourname
         TournamentPair.stage == tournament.current_stage
     ).all()
 
+@log_db_operation
 def create_db_tournament_vote(db: Session, pair_id: int, user_id: int, voted_for: int) -> TournamentVote:
     """Создание голоса за участника в паре"""
     vote = TournamentVote(
@@ -111,6 +121,7 @@ def create_db_tournament_vote(db: Session, pair_id: int, user_id: int, voted_for
     db.refresh(vote)
     return vote
 
+@log_db_operation
 def get_db_tournament_pair_with_details(db: Session, pair_id: int) -> Optional[TournamentPair]:
     """Получение пары по ID с полной информацией об участниках и голосах"""
     pair = (

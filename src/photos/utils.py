@@ -4,17 +4,21 @@ import os
 from pathlib import Path
 import time
 import aiofiles
+from src.logger import app_logger
 
 def get_unique_filename(filename: str) -> str:
     """Создает уникальное имя файла, добавляя метку времени"""
     name, ext = os.path.splitext(filename)
     timestamp = int(time.time())
-    return f"{name}_{timestamp}{ext}"
+    unique = f"{name}_{timestamp}{ext}"
+    app_logger.info(f"Сгенерировано уникальное имя файла: {unique}")
+    return unique
 
 async def save_uploaded_file(file: UploadFile, folder: str = "photos") -> str:
     """Сохраняет загруженный файл на диск и возвращает относительный путь для БД"""
     # Проверяем, что файл - изображение
     if not file.content_type.startswith("image/"):
+        app_logger.warning(f"Попытка загрузить не изображение: {file.filename}")
         raise HTTPException(status_code=400, detail="Загружаемый файл должен быть изображением")
     
     # Создаем уникальное имя файла
@@ -34,4 +38,5 @@ async def save_uploaded_file(file: UploadFile, folder: str = "photos") -> str:
     
     # Относительный путь для БД
     relative_path = f"{folder}/{unique_filename}"
+    app_logger.info(f"Файл {file.filename} сохранён как {relative_path}")
     return relative_path

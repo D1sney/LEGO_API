@@ -6,7 +6,9 @@ from typing import List, Optional, Tuple
 from src.winners.models import TournamentWinner
 from src.tournaments.models import Tournament, TournamentParticipant, TournamentVote
 from src.tournaments.db import get_db_tournament
+from src.logger import log_db_operation
 
+@log_db_operation
 def get_db_tournament_winner(db: Session, tournament_id: int) -> Optional[TournamentWinner]:
     """Получение победителя турнира по ID турнира"""
     return (
@@ -19,6 +21,7 @@ def get_db_tournament_winner(db: Session, tournament_id: int) -> Optional[Tourna
         .first()
     )
 
+@log_db_operation
 def get_db_tournament_winner_by_id(db: Session, winner_id: int) -> Optional[TournamentWinner]:
     """Получение победителя турнира по ID записи победителя"""
     return (
@@ -31,6 +34,7 @@ def get_db_tournament_winner_by_id(db: Session, winner_id: int) -> Optional[Tour
         .first()
     )
 
+@log_db_operation
 def get_db_tournament_winners(
     db: Session, 
     skip: int = 0, 
@@ -55,6 +59,7 @@ def get_db_tournament_winners(
     
     return winners, total
 
+@log_db_operation
 def create_db_tournament_winner(
     db: Session, 
     tournament_id: int, 
@@ -74,6 +79,7 @@ def create_db_tournament_winner(
     db.refresh(winner)
     return winner
 
+@log_db_operation
 def update_db_tournament_winner(
     db: Session, 
     winner_id: int, 
@@ -102,6 +108,7 @@ def update_db_tournament_winner(
     db.refresh(winner)
     return winner
 
+@log_db_operation
 def delete_db_tournament_winner(db: Session, winner_id: int) -> bool:
     """Удаление записи о победителе турнира"""
     winner = db.query(TournamentWinner).filter(TournamentWinner.winner_id == winner_id).first()
@@ -112,6 +119,7 @@ def delete_db_tournament_winner(db: Session, winner_id: int) -> bool:
     db.commit()
     return True
 
+@log_db_operation
 def get_participant_details(db: Session, participant_id: int) -> Tuple[Optional[int], Optional[str]]:
     """Получает set_id и minifigure_id участника турнира"""
     participant = db.query(TournamentParticipant).filter(
@@ -125,12 +133,14 @@ def get_participant_details(db: Session, participant_id: int) -> Tuple[Optional[
 
 # Новые функции для избежания прямых запросов в services.py
 
+@log_db_operation
 def count_participant_votes(db: Session, participant_id: int) -> int:
     """Подсчитывает общее количество голосов за участника"""
     return db.query(TournamentVote).filter(
         TournamentVote.voted_for == participant_id
     ).count()
 
+@log_db_operation
 def check_tournament_type(db: Session, tournament_id: int, expected_type: str) -> bool:
     """Проверяет, соответствует ли тип турнира ожидаемому типу"""
     tournament = db.query(Tournament).filter(

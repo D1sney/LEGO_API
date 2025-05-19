@@ -10,7 +10,9 @@ from src.minifigures.schemas import MinifigureCreate, MinifigureUpdate, Minifigu
 from typing import Optional, List
 from sqlalchemy.sql import func
 from sqlalchemy import distinct
+from src.logger import log_db_operation
 
+@log_db_operation
 def get_db_minifigures(db: Session, limit: int = 10, offset: int = 0, search: str = "", tag_names: Optional[str] = "", tag_logic: str = "AND", min_price: Optional[float] = None, max_price: Optional[float] = None) -> list[Minifigure]:
     # Формируем базовый запрос с загрузкой связанных данных
     query = db.query(Minifigure).options(
@@ -63,6 +65,7 @@ def get_db_minifigures(db: Session, limit: int = 10, offset: int = 0, search: st
     
     return minifigures
 
+@log_db_operation
 def create_db_minifigure(minifigure: MinifigureCreate, db: Session) -> Minifigure:
     new_minifigure = Minifigure(**minifigure.dict())
     try:
@@ -83,6 +86,7 @@ def create_db_minifigure(minifigure: MinifigureCreate, db: Session) -> Minifigur
         else:
             raise HTTPException(status_code=400, detail="Integrity error")
 
+@log_db_operation
 def get_db_one_minifigure(db: Session, minifigure_id: str) -> Minifigure:
     one_minifigure = db.query(Minifigure).options(
         joinedload(Minifigure.face_photo),
@@ -97,6 +101,7 @@ def get_db_one_minifigure(db: Session, minifigure_id: str) -> Minifigure:
     
     return one_minifigure
 
+@log_db_operation
 def update_db_minifigure(minifigure_id: str, minifigure_update: MinifigureUpdate, db: Session) -> Minifigure:
     db_minifigure = get_db_one_minifigure(db, minifigure_id)
     update_data = minifigure_update.dict(exclude_unset=True)
@@ -118,6 +123,7 @@ def update_db_minifigure(minifigure_id: str, minifigure_update: MinifigureUpdate
         else:
             raise HTTPException(status_code=400, detail="Integrity error")
 
+@log_db_operation
 def delete_db_minifigure(minifigure_delete: MinifigureDelete, db: Session) -> dict:
     db_minifigure = get_db_one_minifigure(db, minifigure_delete.minifigure_id)
     db.delete(db_minifigure)
