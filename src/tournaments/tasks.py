@@ -8,11 +8,9 @@ from src.database import get_db, SessionLocal
 from src.tournaments.models import Tournament
 from src.tournaments.services import advance_tournament_stage
 from src.logger import app_logger
+from src.celery_app import celery_app
 
-# Создаем экземпляр Celery
-celery_app = Celery('tournaments_tasks')
-
-@celery_app.task
+@celery_app.task(name='src.tournaments.tasks.check_and_advance_tournaments')
 def check_and_advance_tournaments():
     """
     Задача для проверки и автоматического продвижения турниров на следующую стадию,
@@ -36,11 +34,4 @@ def check_and_advance_tournaments():
                 app_logger.error(f"Ошибка при продвижении турнира {tournament.tournament_id}: {str(e)}")
     finally:
         db.close()
-        app_logger.info("Фоновая задача завершена: проверка и продвижение турниров")
-
-# Конфигурация Celery для задач по расписанию
-@celery_app.on_after_configure.connect
-def setup_periodic_tasks(sender, **kwargs):
-    # Проверяем и продвигаем турниры каждые 10 минут
-    sender.add_periodic_task(600.0, check_and_advance_tournaments.s(), 
-                             name='check tournaments every 10 minutes') 
+        app_logger.info("Фоновая задача завершена: проверка и продвижение турниров") 

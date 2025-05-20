@@ -4,6 +4,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from src.database import Base
 from datetime import datetime
+from src.users.models import User
 
 class Tournament(Base):
     __tablename__ = "tournaments"

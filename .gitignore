@@ -39,3 +39,6 @@ tokens.json
 static/*
 **.xls
 **.pdf
+
+# Celery beat files
+celerybeat*
