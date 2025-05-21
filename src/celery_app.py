@@ -8,6 +8,7 @@ celery_app = Celery(
     backend='rpc://',
     include=[
         'src.tournaments.tasks',
+        'src.email.tasks',
     ]
 )
 

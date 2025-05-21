@@ -12,6 +12,7 @@ from src.users.models import User, RefreshToken
 from src.database import get_db
 from src.config import settings
 from src.logger import app_logger
+from src.email.tasks import send_registration_email
 
 router = APIRouter(
     prefix="/users",
@@ -31,6 +32,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     try:
         new_user = create_user(db=db, user=user)
         app_logger.info(f"User registered: {new_user.username} ({new_user.email})")
+        send_registration_email.delay(new_user.email)
         return new_user
     except HTTPException as exc:
         app_logger.warning(f"Registration failed for {user.email}: {exc.detail}")
