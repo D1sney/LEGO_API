@@ -59,3 +59,7 @@ class UserResponse(UserBase):
     
     class Config:
         from_attributes = True
+
+class EmailVerificationRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(..., min_length=6, max_length=6, description="6-значный код подтверждения")

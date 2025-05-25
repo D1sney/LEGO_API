@@ -7,6 +7,8 @@ from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+import random
+import string
 
 from src.config import settings
 from src.database import get_db
@@ -122,3 +124,6 @@ def get_admin_user(current_user: User = Depends(get_current_active_user)) -> Use
             detail="Недостаточно прав"
         )
     return current_user
+
+def generate_verification_code(length: int = 6) -> str:
+    return ''.join(random.choices(string.digits, k=length))

@@ -3,14 +3,15 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import UniqueViolation
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 from sqlalchemy import update
 
-from src.users.models import User, RefreshToken
+from src.users.models import User, RefreshToken, EmailVerification
 from src.users.schemas import UserCreate, UserUpdate
-from src.users.utils import get_password_hash, verify_password
+from src.users.utils import get_password_hash, verify_password, generate_verification_code
 from src.logger import app_logger, log_db_operation
+from src.config import settings
 
 @log_db_operation
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
@@ -170,3 +171,134 @@ def revoke_all_user_refresh_tokens(db: Session, user_id: str) -> None:
         RefreshToken.revoked == False
     ).update({"revoked": True})
     db.commit()
+
+# Email Verification functions
+
+@log_db_operation
+def create_email_verification(db: Session, user: UserCreate) -> EmailVerification:
+    """Создать запись верификации email"""
+    # Проверяем, что пользователь с таким email НЕ зарегистрирован
+    if get_user_by_email(db, user.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email уже зарегистрирован"
+        )
+    
+    # Проверяем, что username не занят
+    if get_user_by_username(db, user.username):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Имя пользователя уже занято"
+        )
+    
+    # Удаляем старую запись верификации для этого email (если есть)
+    db.query(EmailVerification).filter(EmailVerification.email == user.email).delete()
+    
+    # Генерируем код и создаем запись верификации
+    code = generate_verification_code()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.EMAIL_VERIFICATION_EXPIRE_MINUTES)
+    
+    verification = EmailVerification(
+        email=user.email,
+        username=user.username,
+        hashed_password=get_password_hash(user.password),
+        verification_code=code,
+        expires_at=expires_at,
+        verified=False
+    )
+    
+    try:
+        db.add(verification)
+        db.commit()
+        db.refresh(verification)
+        return verification
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ошибка при создании запроса верификации"
+        )
+
+@log_db_operation
+def verify_email_code(db: Session, email: str, code: str) -> EmailVerification:
+    """Проверить код верификации email"""
+    verification = db.query(EmailVerification).filter(
+        EmailVerification.email == email
+    ).first()
+    
+    if not verification:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Запрос на верификацию не найден"
+        )
+    
+    # Проверяем срок действия
+    if datetime.now(timezone.utc) > verification.expires_at:
+        # Удаляем просроченную запись
+        db.query(EmailVerification).filter(EmailVerification.email == email).delete()
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Срок действия кода истёк. Запросите новый код."
+        )
+    
+    if verification.verification_code != code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный код подтверждения"
+        )
+    
+    # Помечаем как верифицированный
+    verification.verified = True
+    db.commit()
+    db.refresh(verification)
+    return verification
+
+@log_db_operation
+def complete_registration_from_verification(db: Session, email: str) -> User:
+    """Завершить регистрацию после подтверждения email"""
+    # Ищем верифицированную запись
+    verification = db.query(EmailVerification).filter(
+        EmailVerification.email == email,
+        EmailVerification.verified == True
+    ).first()
+    
+    if not verification:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email не подтверждён. Сначала пройдите верификацию."
+        )
+    
+    # Проверяем, что пользователь ещё не зарегистрирован (двойная проверка)
+    if get_user_by_email(db, email):
+        # Удаляем запись верификации
+        db.query(EmailVerification).filter(EmailVerification.email == email).delete()
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Пользователь уже зарегистрирован"
+        )
+    
+    try:
+        # Создаём пользователя из сохранённых данных
+        new_user = User(
+            email=verification.email,
+            username=verification.username,
+            hashed_password=verification.hashed_password,
+            is_active=True
+        )
+        db.add(new_user)
+        
+        # Удаляем запись верификации
+        db.query(EmailVerification).filter(EmailVerification.email == email).delete()
+        
+        db.commit()
+        db.refresh(new_user)
+        return new_user
+        
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ошибка при создании пользователя"
+        )

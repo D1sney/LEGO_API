@@ -40,3 +40,14 @@ class RefreshToken(Base):
     
     # Связь с пользователем
     user = relationship("User", back_populates="refresh_tokens")
+
+class EmailVerification(Base):
+    __tablename__ = "email_verifications"
+
+    email = Column(String, primary_key=True, index=True)
+    username = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    verification_code = Column(String, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    verified = Column(Boolean, default=False)

@@ -5,14 +5,18 @@ from sqlalchemy.orm import Session
 from datetime import timedelta, datetime, timezone
 from typing import List
 
-from src.users.schemas import UserCreate, UserResponse, UserUpdate, Token
-from src.users.db import create_user, authenticate_user, update_user, get_user_by_id, get_users, revoke_refresh_token, revoke_all_user_refresh_tokens
+from src.users.schemas import UserCreate, UserResponse, UserUpdate, Token, EmailVerificationRequest
+from src.users.db import (
+    create_user, authenticate_user, update_user, get_user_by_id, get_users, 
+    revoke_refresh_token, revoke_all_user_refresh_tokens,
+    create_email_verification, verify_email_code, complete_registration_from_verification
+)
 from src.users.utils import create_access_token, create_refresh_token, verify_refresh_token, get_current_active_user, get_admin_user
-from src.users.models import User, RefreshToken
+from src.users.models import User
 from src.database import get_db
 from src.config import settings
 from src.logger import app_logger
-from src.email.tasks import send_registration_email
+from src.email.tasks import send_registration_email, send_verification_code_email
 
 router = APIRouter(
     prefix="/users",
@@ -23,20 +27,30 @@ router = APIRouter(
     "/register", 
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Регистрация нового пользователя",
-    description="Создание новой учетной записи пользователя"
+    summary="Завершить регистрацию после подтверждения email",
+    description="Создание учетной записи пользователя после подтверждения email"
 )
-async def register(user: UserCreate, db: Session = Depends(get_db)):
-    """Регистрация нового пользователя"""
-    # Лишние строчки только для логов, можно выводить эти логи из db.py, но принято логировать бизнес логику именно на этом уровне, больше строчек, но за то понятнее
+async def register(email_data: EmailVerificationRequest, db: Session = Depends(get_db)):
+    """Завершение регистрации после подтверждения email"""
+    
     try:
-        new_user = create_user(db=db, user=user)
-        app_logger.info(f"User registered: {new_user.username} ({new_user.email})")
-        send_registration_email.delay(new_user.email)
+        new_user = complete_registration_from_verification(db, email_data.email)
+        app_logger.info(f"User registered successfully: {new_user.username} ({new_user.email})")
+        
+        # Отправляем приветственное письмо
+        try:
+            send_registration_email.delay(new_user.email)
+        except Exception as e:
+            app_logger.warning(f"Failed to send welcome email to {new_user.email}: {e}")
+        
         return new_user
+        
     except HTTPException as exc:
-        app_logger.warning(f"Registration failed for {user.email}: {exc.detail}")
+        app_logger.warning(f"Registration failed for {email_data.email}: {exc.detail}")
         raise
+    except Exception as e:
+        app_logger.error(f"Unexpected error during registration: {email_data.email}, {e}")
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 @router.post(
     "/login", 
@@ -214,3 +228,51 @@ async def read_user(
         )
     
     return db_user
+
+@router.post(
+    "/request-email-verification",
+    summary="Запросить код подтверждения email для регистрации",
+    description="Сохраняет данные пользователя и отправляет код подтверждения на email"
+)
+async def request_email_verification(user_data: UserCreate, db: Session = Depends(get_db)):
+    """Запрос кода подтверждения email с сохранением данных пользователя"""
+    
+    try:
+        verification = create_email_verification(db, user_data)
+        
+        # Отправляем код на email в фоновом режиме
+        try:
+            send_verification_code_email.delay(user_data.email, verification.verification_code)
+            app_logger.info(f"Verification code email task queued for {user_data.email}")
+        except Exception as e:
+            app_logger.error(f"Failed to queue verification email task for {user_data.email}: {e}")
+            raise HTTPException(status_code=500, detail="Не удалось отправить код подтверждения")
+        
+        return {"msg": "Код подтверждения отправлен на email", "email": user_data.email}
+        
+    except HTTPException as exc:
+        app_logger.warning(f"Email verification request failed for {user_data.email}: {exc.detail}")
+        raise
+    except Exception as e:
+        app_logger.error(f"Unexpected error during email verification request: {user_data.email}, {e}")
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+@router.post(
+    "/verify-email-code",
+    summary="Подтвердить код верификации email",
+    description="Проверяет код подтверждения и помечает email как верифицированный"
+)
+async def verify_email_code_endpoint(data: EmailVerificationRequest, db: Session = Depends(get_db)):
+    """Проверка кода подтверждения email"""
+    
+    try:
+        verification = verify_email_code(db, data.email, data.code)
+        app_logger.info(f"Email verified: {data.email}")
+        return {"msg": "Email успешно подтверждён. Можно завершить регистрацию.", "email": data.email}
+        
+    except HTTPException as exc:
+        app_logger.warning(f"Email verification failed for {data.email}: {exc.detail}")
+        raise
+    except Exception as e:
+        app_logger.error(f"Unexpected error during email verification: {data.email}, {e}")
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")

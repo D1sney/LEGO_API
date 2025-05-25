@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    EMAIL_VERIFICATION_EXPIRE_MINUTES: int = 5
     BASE_URL: str
     SMTP_HOST: str
     SMTP_PORT: int
