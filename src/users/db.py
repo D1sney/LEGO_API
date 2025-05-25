@@ -191,6 +191,39 @@ def create_email_verification(db: Session, user: UserCreate) -> EmailVerificatio
             detail="Имя пользователя уже занято"
         )
     
+    # Проверяем существующую запись верификации для контроля времени между запросами
+    existing_verification = db.query(EmailVerification).filter(
+        EmailVerification.email == user.email
+    ).first()
+    
+    # Оставляем эту проверку но в эту ветку мы никогда не попадем
+    if existing_verification:
+        # Если код уже был верифицирован, не даем запрашивать новый
+        if existing_verification.verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email уже подтвержден. Завершите регистрацию."
+            )
+        
+        # Проверяем, не слишком ли рано запрашивается новый код
+        time_since_last_request = datetime.now(timezone.utc) - existing_verification.created_at
+        min_interval = timedelta(minutes=settings.EMAIL_VERIFICATION_RESEND_INTERVAL_MINUTES)
+        
+        if time_since_last_request < min_interval:
+            remaining_seconds = int((min_interval - time_since_last_request).total_seconds())
+            remaining_minutes = remaining_seconds // 60
+            remaining_seconds_only = remaining_seconds % 60
+            
+            if remaining_minutes > 0:
+                time_msg = f"{remaining_minutes} мин {remaining_seconds_only} сек"
+            else:
+                time_msg = f"{remaining_seconds_only} сек"
+                
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Слишком частые запросы кода. Повторите через {time_msg}"
+            )
+    
     # Удаляем старую запись верификации для этого email (если есть)
     db.query(EmailVerification).filter(EmailVerification.email == user.email).delete()
     
