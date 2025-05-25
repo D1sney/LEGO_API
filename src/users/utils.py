@@ -13,6 +13,7 @@ import string
 from src.config import settings
 from src.database import get_db
 from src.users.models import User, RefreshToken
+from src.logger import app_logger
 
 # Настройка для хеширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -38,8 +39,13 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+    try:
+        encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        app_logger.debug(f"Access token создан для пользователя {data.get('username', 'unknown')}")
+        return encoded_jwt
+    except Exception as e:
+        app_logger.error(f"Ошибка при создании access токена: {e}")
+        raise
 
 def create_refresh_token(db: Session, user_id: str) -> tuple[str, datetime]:
     """Создание refresh токена и сохранение его в базе данных"""
@@ -54,13 +60,14 @@ def create_refresh_token(db: Session, user_id: str) -> tuple[str, datetime]:
     db.add(db_token)
     db.commit()
     db.refresh(db_token)
-    
+    app_logger.debug(f"Refresh token создан для пользователя {user_id}")
     return token, expires_at
 
 def verify_refresh_token(db: Session, token: str) -> RefreshToken:
     """Проверка refresh токена"""
     db_token = db.query(RefreshToken).filter(RefreshToken.token == token).first()
     if not db_token:
+        app_logger.warning(f"Попытка использовать несуществующий refresh токен: {token}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Недействительный refresh токен",
@@ -68,6 +75,7 @@ def verify_refresh_token(db: Session, token: str) -> RefreshToken:
         )
     
     if db_token.revoked:
+        app_logger.warning(f"Попытка использовать отозванный refresh токен: {token}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh токен был аннулирован",
@@ -75,6 +83,7 @@ def verify_refresh_token(db: Session, token: str) -> RefreshToken:
         )
     
     if db_token.expires_at < datetime.now(timezone.utc):
+        app_logger.info(f"Попытка использовать истекший refresh токен: {token}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Срок действия refresh токена истёк",
@@ -97,12 +106,15 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         user_id: str = payload.get("sub")
         
         if user_id is None:
+            app_logger.warning("Access токен не содержит user_id (sub)")
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        app_logger.warning(f"Ошибка декодирования access токена: {e}")
         raise credentials_exception
     
     user = db.query(User).filter(User.user_id == user_id).first()
     if user is None:
+        app_logger.warning(f"Пользователь с id {user_id} не найден по access токену")
         raise credentials_exception
     
     return user
@@ -126,4 +138,6 @@ def get_admin_user(current_user: User = Depends(get_current_active_user)) -> Use
     return current_user
 
 def generate_verification_code(length: int = 6) -> str:
-    return ''.join(random.choices(string.digits, k=length))
+    code = ''.join(random.choices(string.digits, k=length))
+    app_logger.debug(f"Сгенерирован код подтверждения: {code}")
+    return code
