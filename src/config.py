@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     BASE_URL: str
+    SMTP_HOST: str
+    SMTP_PORT: int
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+    EMAIL_FROM: str
 
     class Config:
         # Определяем путь к .env файлу в зависимости от текущей директории

@@ -12,6 +12,7 @@ from src.minifigures.db import (
     delete_db_minifigure
 )
 from src.users.utils import get_current_active_user
+from src.logger import app_logger
 
 router = APIRouter(
     prefix="/minifigures",
@@ -40,6 +41,7 @@ async def get_minifigures(filter: MinifigureFilter = Depends(), db: Session = De
         min_price=filter.min_price,
         max_price=filter.max_price
     )
+    app_logger.info(f"Получено {len(minifigures)} минифигурок (фильтр: {filter.dict()})")
     return minifigures
 
 @router.post(
@@ -51,6 +53,7 @@ async def get_minifigures(filter: MinifigureFilter = Depends(), db: Session = De
 )
 async def create_minifigure(minifigure: MinifigureCreate, db: Session = Depends(get_db)):
     new_minifigure = create_db_minifigure(minifigure, db)
+    app_logger.info(f"Создана минифигурка: {new_minifigure.name} (ID: {new_minifigure.minifigure_id})")
     return new_minifigure
 
 @router.put(
@@ -62,6 +65,7 @@ async def create_minifigure(minifigure: MinifigureCreate, db: Session = Depends(
 )
 async def update_minifigure(minifigure_id: str, minifigure_update: MinifigureUpdate, db: Session = Depends(get_db)):
     updated_minifigure = update_db_minifigure(minifigure_id, minifigure_update, db)
+    app_logger.info(f"Обновлена минифигурка ID: {minifigure_id}")
     return updated_minifigure
 
 @router.delete(
@@ -72,6 +76,7 @@ async def update_minifigure(minifigure_id: str, minifigure_update: MinifigureUpd
 )
 async def delete_minifigure(minifigure_delete: MinifigureDelete, db: Session = Depends(get_db)):
     result = delete_db_minifigure(minifigure_delete, db)
+    app_logger.info(f"Удалена минифигурка ID: {minifigure_delete.minifigure_id}")
     return result
 
 @router.get(
@@ -83,4 +88,5 @@ async def delete_minifigure(minifigure_delete: MinifigureDelete, db: Session = D
 )
 async def get_one_minifigure(minifigure_id: str, db: Session = Depends(get_db)):
     minifigure = get_db_one_minifigure(db, minifigure_id)
+    app_logger.info(f"Получена минифигурка ID: {minifigure_id}")
     return minifigure

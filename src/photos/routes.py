@@ -16,6 +16,7 @@ from src.photos.db import (
 )
 from src.photos.utils import save_uploaded_file
 from src.users.utils import get_current_active_user
+from src.logger import app_logger
 
 router = APIRouter(
     prefix="/photos",
@@ -49,6 +50,7 @@ async def upload_photo(
     
     # Сохраняем в БД
     new_photo = create_db_photo(photo_data, db)
+    app_logger.info(f"Загружено фото: {relative_path} (set_id={data.set_id}, minifigure_id={data.minifigure_id})")
     return new_photo
 
 @router.get(
@@ -64,6 +66,7 @@ async def get_photos(
     offset: int = 0
 ):
     photos = get_db_photos(db, limit, offset)
+    app_logger.info(f"Получено {len(photos)} фото (limit={limit}, offset={offset})")
     return photos
 
 @router.post(
@@ -75,6 +78,7 @@ async def get_photos(
 )
 async def create_photo(photo: PhotoCreate, db: Session = Depends(get_db)):
     new_photo = create_db_photo(photo, db)
+    app_logger.info(f"Создано фото: {new_photo.photo_url} (ID: {new_photo.photo_id})")
     return new_photo
 
 @router.get(
@@ -86,6 +90,7 @@ async def create_photo(photo: PhotoCreate, db: Session = Depends(get_db)):
 )
 async def get_one_photo(photo_id: int, db: Session = Depends(get_db)):
     photo = get_db_one_photo(db, photo_id)
+    app_logger.info(f"Получено фото ID: {photo_id}")
     return photo
 
 @router.put(
@@ -97,6 +102,7 @@ async def get_one_photo(photo_id: int, db: Session = Depends(get_db)):
 )
 async def update_photo(photo_id: int, photo_update: PhotoUpdate, db: Session = Depends(get_db)):
     updated_photo = update_db_photo(photo_id, photo_update, db)
+    app_logger.info(f"Обновлено фото ID: {photo_id}")
     return updated_photo
 
 @router.delete(
@@ -107,4 +113,5 @@ async def update_photo(photo_id: int, photo_update: PhotoUpdate, db: Session = D
 )
 async def delete_photo(photo_delete: PhotoDelete, db: Session = Depends(get_db)):
     result = delete_db_photo(photo_delete, db)
+    app_logger.info(f"Удалено фото ID: {photo_delete.photo_id}")
     return result

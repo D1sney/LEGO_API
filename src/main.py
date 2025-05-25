@@ -1,5 +1,5 @@
 # src/main.py
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
 from src.database import engine, get_db, Base
@@ -19,6 +19,8 @@ from src.users.routes import router as users_router
 from src.tournaments.routes import router as tournaments_router
 from src.winners.routes import router as winners_router
 from fastapi.middleware.cors import CORSMiddleware
+from src.middleware import LoggingMiddleware
+from src.logger import app_logger
 
 # Создаем таблицы в базе данных
 # Base.metadata.create_all(bind=engine)
@@ -38,6 +40,12 @@ app = FastAPI(
         "url": "https://opensource.org/licenses/MIT",
     },
 )
+
+# Логгирование запуска приложения
+app_logger.info("Запуск приложения LEGO Collection API")
+
+# Добавляем middleware для логирования
+app.add_middleware(LoggingMiddleware)
 
 # Подключаем папку static для раздачи файлов
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -62,7 +70,14 @@ app.include_router(winners_router)
 
 @app.get("/")
 def read_root(db: Session = Depends(get_db)):
+    app_logger.info("Запрос к корневому эндпоинту")
     return {"message": "LEGO Collection API"}
+
+# Обработчик для перехвата необработанных исключений
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    app_logger.error(f"Необработанное исключение: {str(exc)} | url={request.url} | method={request.method} | type={type(exc).__name__}")
+    return {"detail": "Внутренняя ошибка сервера"}
 
 if __name__ == "__main__":
     import uvicorn

@@ -10,7 +10,9 @@ from src.sets.schemas import SetCreate, SetUpdate, SetDelete, SetMinifigureCreat
 from typing import Optional, List
 from sqlalchemy.sql import func
 from sqlalchemy import distinct, case
+from src.logger import log_db_operation
 
+@log_db_operation
 def get_db_sets(db: Session, limit: int = 10, offset: int = 0, search: str = "", tag_names: Optional[str] = "", tag_logic: str = "AND", min_price: Optional[float] = None, max_price: Optional[float] = None, min_piece_count: Optional[int] = None, max_piece_count: Optional[int] = None) -> list[Set]:
     # Формируем базовый запрос с загрузкой связанных данных
     query = db.query(Set).options(
@@ -70,6 +72,7 @@ def get_db_sets(db: Session, limit: int = 10, offset: int = 0, search: str = "",
     
     return sets
 
+@log_db_operation
 def create_db_set(set: SetCreate, db: Session) -> Set:
     new_set = Set(**set.dict())
     try:
@@ -90,6 +93,7 @@ def create_db_set(set: SetCreate, db: Session) -> Set:
         else:
             raise HTTPException(status_code=400, detail="Integrity error")
 
+@log_db_operation
 def get_db_one_set(db: Session, set_id: int) -> Set:
     # Используем joinedload для загрузки связанных фотографий и тегов одним запросом
     one_set = db.query(Set).options(
@@ -107,6 +111,7 @@ def get_db_one_set(db: Session, set_id: int) -> Set:
     
     return one_set
 
+@log_db_operation
 def update_db_set(set_id: int, set_update: SetUpdate, db: Session) -> Set:
     db_set = get_db_one_set(db, set_id)
     update_data = set_update.dict(exclude_unset=True)
@@ -128,6 +133,7 @@ def update_db_set(set_id: int, set_update: SetUpdate, db: Session) -> Set:
         else:
             raise HTTPException(status_code=400, detail="Integrity error")
 
+@log_db_operation
 def delete_db_set(set_delete: SetDelete, db: Session) -> dict:
     db_set = get_db_one_set(db, set_delete.set_id)
     db.delete(db_set)
@@ -135,6 +141,7 @@ def delete_db_set(set_delete: SetDelete, db: Session) -> dict:
     return {"message": f"Set with id {set_delete.set_id} deleted successfully"}
 
 # Операции для SetMinifigure
+@log_db_operation
 def create_db_set_minifigure(set_minifigure: SetMinifigureCreate, db: Session) -> SetMinifigure:
     new_set_minifigure = SetMinifigure(**set_minifigure.dict())
     try:
@@ -155,6 +162,7 @@ def create_db_set_minifigure(set_minifigure: SetMinifigureCreate, db: Session) -
         else:
             raise HTTPException(status_code=400, detail="Integrity error")
 
+@log_db_operation
 def delete_db_set_minifigure(set_minifigure_delete: SetMinifigureDelete, db: Session) -> dict:
     db_set_minifigure = db.query(SetMinifigure).filter(
         SetMinifigure.set_id == set_minifigure_delete.set_id,

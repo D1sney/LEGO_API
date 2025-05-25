@@ -96,7 +96,6 @@ def create_tournament_winner_from_participant(
         minifigure_id=minifigure_id,
         total_votes=total_votes
     )
-    
     return winner
 
 def create_tournament_winner(
@@ -165,7 +164,6 @@ def create_tournament_winner(
         minifigure_id=winner_data.minifigure_id,
         total_votes=winner_data.total_votes
     )
-    
     return winner
 
 def update_tournament_winner(
@@ -213,7 +211,6 @@ def update_tournament_winner(
         minifigure_id=winner_data.minifigure_id,
         total_votes=winner_data.total_votes
     )
-    
     return updated_winner
 
 def delete_tournament_winner(db: Session, winner_id: int) -> Dict[str, str]:
@@ -236,4 +233,4 @@ def delete_tournament_winner(db: Session, winner_id: int) -> Dict[str, str]:
             detail="Победитель не найден"
         )
     
-    return {"message": "Запись о победителе турнира успешно удалена"} 
+    return {"message": f"Победитель турнира с ID {winner_id} удален"} 

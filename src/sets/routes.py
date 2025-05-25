@@ -14,6 +14,7 @@ from src.sets.db import (
     delete_db_set_minifigure
 )
 from src.users.utils import get_current_active_user
+from src.logger import app_logger
 
 router = APIRouter(
     prefix="/sets",
@@ -44,6 +45,7 @@ async def get_sets(filter: SetFilter = Depends(), db: Session = Depends(get_db))
         min_piece_count=filter.min_piece_count,
         max_piece_count=filter.max_piece_count
     )
+    app_logger.info(f"Получено {len(sets)} наборов (фильтр: {filter.dict()})")
     return sets
 
 @router.post(
@@ -55,6 +57,7 @@ async def get_sets(filter: SetFilter = Depends(), db: Session = Depends(get_db))
 )
 async def create_set(set: SetCreate, db: Session = Depends(get_db)):
     new_set = create_db_set(set, db)
+    app_logger.info(f"Создан новый набор: {new_set.name} (ID: {new_set.set_id})")
     return new_set
 
 @router.get(
@@ -66,6 +69,7 @@ async def create_set(set: SetCreate, db: Session = Depends(get_db)):
 )
 async def get_one_set(set_id: int, db: Session = Depends(get_db)):
     set = get_db_one_set(db, set_id)
+    app_logger.info(f"Получен набор ID: {set_id}")
     return set
 
 @router.put(
@@ -77,6 +81,7 @@ async def get_one_set(set_id: int, db: Session = Depends(get_db)):
 )
 async def update_set(set_id: int, set_update: SetUpdate, db: Session = Depends(get_db)):
     updated_set = update_db_set(set_id, set_update, db)
+    app_logger.info(f"Обновлен набор ID: {set_id}")
     return updated_set
 
 @router.delete(
@@ -87,6 +92,7 @@ async def update_set(set_id: int, set_update: SetUpdate, db: Session = Depends(g
 )
 async def delete_set(set_delete: SetDelete, db: Session = Depends(get_db)):
     result = delete_db_set(set_delete, db)
+    app_logger.info(f"Удален набор ID: {set_delete.set_id}")
     return result
 
 # Эндпоинты для SetMinifigure
@@ -100,6 +106,7 @@ async def delete_set(set_delete: SetDelete, db: Session = Depends(get_db)):
 )
 async def create_set_minifigure(set_minifigure: SetMinifigureCreate, db: Session = Depends(get_db)):
     new_set_minifigure = create_db_set_minifigure(set_minifigure, db)
+    app_logger.info(f"Добавлена минифигурка {set_minifigure.minifigure_id} в набор {set_minifigure.set_id}")
     return new_set_minifigure
 
 @router.delete(
@@ -110,4 +117,5 @@ async def create_set_minifigure(set_minifigure: SetMinifigureCreate, db: Session
 )
 async def delete_set_minifigure(set_minifigure_delete: SetMinifigureDelete, db: Session = Depends(get_db)):
     result = delete_db_set_minifigure(set_minifigure_delete, db)
+    app_logger.info(f"Удалена минифигурка {set_minifigure_delete.minifigure_id} из набора {set_minifigure_delete.set_id}")
     return result

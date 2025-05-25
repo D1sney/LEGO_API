@@ -10,6 +10,7 @@ from src.tournaments.models import Tournament, TournamentParticipant, Tournament
 from src.sets.db import get_db_sets
 from src.minifigures.db import get_db_minifigures
 from src.tournaments.schemas import TournamentCreate
+from src.logger import app_logger
 
 def get_tournament_participants(
     db: Session, 
@@ -112,6 +113,7 @@ def generate_tournament_pairs(
 
     db.add_all(pairs)
     db.flush()
+    app_logger.info(f"Сгенерировано {len(pairs)} пар для стадии {first_stage} турнира {tournament.tournament_id}")
     return pairs
 
 def get_next_stage(current_stage: str) -> Optional[str]:
@@ -164,6 +166,7 @@ def calculate_winners(db: Session, pairs: List[TournamentPair]) -> List[int]:
             pair.winner_id = random.choice([pair.participant1_id, pair.participant2_id])
             winners.append(pair.winner_id)
     
+    app_logger.info(f"Победители определены для {len(pairs)} пар")
     return winners
 
 def generate_next_stage_pairs(
@@ -191,4 +194,5 @@ def generate_next_stage_pairs(
     
     db.add_all(pairs)
     db.flush()
+    app_logger.info(f"Сгенерировано {len(pairs)} пар для стадии {tournament.current_stage} турнира {tournament.tournament_id}")
     return pairs
