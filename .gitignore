@@ -30,6 +30,8 @@ venv.bak/
 **/.idea/
 .cursor/
 **/.cursor/
+.cursorignore
+**/.cursorignore
 
 # Дополнительно
 tokens.json

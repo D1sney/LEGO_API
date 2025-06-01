@@ -1,7 +1,7 @@
 """add_refresh_tokens_table
 
 Revision ID: a6638baa1e8f
-Revises: 120460941387
+Revises: 5e0a1434d99c
 Create Date: 2025-05-17 14:33:35.550157
 
 """
@@ -14,7 +14,7 @@ from sqlalchemy.sql import func
 
 # revision identifiers, used by Alembic.
 revision: str = 'a6638baa1e8f'
-down_revision: Union[str, None] = '120460941387'
+down_revision: Union[str, None] = '5e0a1434d99c'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

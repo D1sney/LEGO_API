@@ -1,7 +1,7 @@
 """Add price to Minifigure
 
 Revision ID: a96673864b7a
-Revises: 7ae129a4bcf7
+Revises: aab5b9d28067
 Create Date: 2025-04-28 16:45:36.118593
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'a96673864b7a'
-down_revision: Union[str, None] = '7ae129a4bcf7'
+down_revision: Union[str, None] = 'aab5b9d28067'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

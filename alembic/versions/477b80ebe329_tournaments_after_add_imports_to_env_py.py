@@ -1,7 +1,7 @@
 """tournaments after add imports to env.py
 
 Revision ID: 477b80ebe329
-Revises: 76c22daf3d17
+Revises: 0e8a3557cce5
 Create Date: 2025-05-08 23:31:39.991595
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '477b80ebe329'
-down_revision: Union[str, None] = '76c22daf3d17'
+down_revision: Union[str, None] = '0e8a3557cce5'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

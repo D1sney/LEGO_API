@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     SMTP_USER: str
     SMTP_PASSWORD: str
     EMAIL_FROM: str
+    RABBITMQ_HOST: str
+    RABBITMQ_PORT: int
+    RABBITMQ_USER: str
+    RABBITMQ_PASSWORD: str
 
     class Config:
         # Определяем путь к .env файлу в зависимости от текущей директории
