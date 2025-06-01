@@ -63,3 +63,6 @@ class UserResponse(UserBase):
 class EmailVerificationRequest(BaseModel):
     email: EmailStr
     code: str = Field(..., min_length=6, max_length=6, description="6-значный код подтверждения")
+
+class ResendVerificationCodeRequest(BaseModel):
+    email: EmailStr = Field(..., description="Email для повторной отправки кода подтверждения")

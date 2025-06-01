@@ -5,11 +5,11 @@ from sqlalchemy.orm import Session
 from datetime import timedelta, datetime, timezone
 from typing import List
 
-from src.users.schemas import UserCreate, UserResponse, UserUpdate, Token, EmailVerificationRequest
+from src.users.schemas import UserCreate, UserResponse, UserUpdate, Token, EmailVerificationRequest, ResendVerificationCodeRequest
 from src.users.db import (
     create_user, authenticate_user, update_user, get_user_by_id, get_users, 
     revoke_refresh_token, revoke_all_user_refresh_tokens,
-    create_email_verification, verify_email_code, complete_registration_from_verification
+    create_email_verification, verify_email_code, complete_registration_from_verification, resend_verification_code
 )
 from src.users.utils import create_access_token, create_refresh_token, verify_refresh_token, get_current_active_user, get_admin_user
 from src.users.models import User
@@ -275,4 +275,32 @@ async def verify_email_code_endpoint(data: EmailVerificationRequest, db: Session
         raise
     except Exception as e:
         app_logger.error(f"Unexpected error during email verification: {data.email}, {e}")
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+@router.post(
+    "/resend-verification-code",
+    summary="Повторная отправка кода подтверждения email",
+    description="Отправляет новый код подтверждения на email (требует только email)"
+)
+async def resend_verification_code_endpoint(data: ResendVerificationCodeRequest, db: Session = Depends(get_db)):
+    """Повторная отправка кода подтверждения email"""
+    
+    try:
+        verification = resend_verification_code(db, data.email)
+        
+        # Отправляем новый код на email в фоновом режиме
+        try:
+            send_verification_code_email.delay(data.email, verification.verification_code)
+            app_logger.info(f"Resend verification code email task queued for {data.email}")
+        except Exception as e:
+            app_logger.error(f"Failed to queue resend verification email task for {data.email}: {e}")
+            raise HTTPException(status_code=500, detail="Не удалось отправить код подтверждения")
+        
+        return {"msg": "Новый код подтверждения отправлен на email", "email": data.email}
+        
+    except HTTPException as exc:
+        app_logger.warning(f"Resend verification code failed for {data.email}: {exc.detail}")
+        raise
+    except Exception as e:
+        app_logger.error(f"Unexpected error during resend verification code: {data.email}, {e}")
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")

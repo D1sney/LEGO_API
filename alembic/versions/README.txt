@@ -1,0 +1,1 @@
+Добавить миграцию для новой таблицы email_verifications (src/users/models.py) 

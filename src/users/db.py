@@ -335,3 +335,64 @@ def complete_registration_from_verification(db: Session, email: str) -> User:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Ошибка при создании пользователя"
         )
+
+@log_db_operation
+def resend_verification_code(db: Session, email: str) -> EmailVerification:
+    """Повторная отправка кода верификации email"""
+    # Ищем существующую запись верификации
+    verification = db.query(EmailVerification).filter(
+        EmailVerification.email == email
+    ).first()
+    
+    if not verification:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Запрос на верификацию не найден. Начните процесс регистрации заново."
+        )
+    
+    # Если код уже был верифицирован, не даем запрашивать новый
+    if verification.verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email уже подтвержден. Завершите регистрацию."
+        )
+    
+    # Проверяем, не слишком ли рано запрашивается новый код
+    time_since_last_request = datetime.now(timezone.utc) - verification.created_at
+    min_interval = timedelta(minutes=settings.EMAIL_VERIFICATION_RESEND_INTERVAL_MINUTES)
+    
+    if time_since_last_request < min_interval:
+        remaining_seconds = int((min_interval - time_since_last_request).total_seconds())
+        remaining_minutes = remaining_seconds // 60
+        remaining_seconds_only = remaining_seconds % 60
+        
+        if remaining_minutes > 0:
+            time_msg = f"{remaining_minutes} мин {remaining_seconds_only} сек"
+        else:
+            time_msg = f"{remaining_seconds_only} сек"
+            
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Слишком частые запросы кода. Повторите через {time_msg}"
+        )
+    
+    # Генерируем новый код и обновляем запись
+    new_code = generate_verification_code()
+    new_expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.EMAIL_VERIFICATION_EXPIRE_MINUTES)
+    
+    # Обновляем существующую запись
+    verification.verification_code = new_code
+    verification.expires_at = new_expires_at
+    verification.created_at = datetime.now(timezone.utc)  # Обновляем время для контроля интервала
+    verification.verified = False  # На всякий случай сбрасываем флаг
+    
+    try:
+        db.commit()
+        db.refresh(verification)
+        return verification
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ошибка при обновлении запроса верификации"
+        )
