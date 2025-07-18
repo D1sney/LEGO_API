@@ -1,4 +1,5 @@
 # src/main.py
+from datetime import datetime
 from fastapi import FastAPI, Depends, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.utils import get_openapi
@@ -72,6 +73,11 @@ app.include_router(winners_router)
 def read_root(db: Session = Depends(get_db)):
     app_logger.info("Запрос к корневому эндпоинту")
     return {"message": "LEGO Collection API"}
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint для Docker и мониторинга"""
+    return {"status": "healthy", "service": "LEGO Collection API", "timestamp": datetime.now().isoformat()}
 
 # Обработчик для перехвата необработанных исключений
 @app.exception_handler(Exception)

@@ -1,6 +1,7 @@
 # src/Photo/schemas.py
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
+from src.config import settings
 
 class PhotoBase(BaseModel):
     set_id: Optional[int] = Field(None, description="ID набора LEGO, к которому относится фото", example=75968)
@@ -24,15 +25,15 @@ class PhotoResponse(PhotoBase):
     @field_validator("photo_url", mode="before")
     @classmethod
     def make_absolute_url(cls, value):
-        # Преобразуем относительный путь в абсолютный URL
-        base_url = "http://127.0.0.1:8000"  # Замени на адрес твоего сервера при деплое
+        # Преобразуем относительный путь в абсолютный URL используя BASE_URL из настроек
+        base_url = settings.BASE_URL
         return f"{base_url}/static/{value}"
     
     class Config:
         from_attributes = True
 
 class PhotoDelete(BaseModel):
-    photo_id: int = Field(..., description="Уникальный идентификатор фотографии для удаления")
+    photo_id: int = Field(..., description="ID фотографии для удаления")
 
 class PhotoUploadData(BaseModel):
     set_id: Optional[int] = Field(None, description="ID набора LEGO (оставьте пустым если не связано с набором)")
