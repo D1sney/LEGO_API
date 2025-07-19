@@ -20,8 +20,28 @@ from src.users.routes import router as users_router
 from src.tournaments.routes import router as tournaments_router
 from src.winners.routes import router as winners_router
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from src.middleware import LoggingMiddleware
 from src.logger import app_logger
+
+
+# Middleware для обработки X-Forwarded заголовков от reverse proxy
+class ProxyHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Обрабатываем X-Forwarded-Proto заголовок от nginx
+        forwarded_proto = request.headers.get("x-forwarded-proto")
+        if forwarded_proto:
+            request.scope["scheme"] = forwarded_proto
+        
+        # Обрабатываем X-Forwarded-Host заголовок от nginx
+        forwarded_host = request.headers.get("x-forwarded-host")
+        if forwarded_host:
+            request.scope["server"] = (forwarded_host, None)
+        
+        response = await call_next(request)
+        return response
+
 
 # Создаем таблицы в базе данных
 # Base.metadata.create_all(bind=engine)
@@ -44,6 +64,12 @@ app = FastAPI(
 
 # Логгирование запуска приложения
 app_logger.info("Запуск приложения LEGO Collection API")
+
+# Добавляем middleware для обработки reverse proxy заголовков (ВАЖНО: первым!)
+app.add_middleware(ProxyHeadersMiddleware)
+
+# Добавляем middleware для доверенных хостов
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 # Добавляем middleware для логирования
 app.add_middleware(LoggingMiddleware)
