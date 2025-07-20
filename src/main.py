@@ -1,4 +1,5 @@
 # src/main.py
+import os
 from datetime import datetime
 from fastapi import FastAPI, Depends, Request
 from fastapi.staticfiles import StaticFiles
@@ -50,6 +51,9 @@ app = FastAPI(
     title="LEGO Collection API",
     description="API для управления персональной коллекцией LEGO наборов и минифигурок",
     version="0.1.0",
+    root_path="/api",
+    docs_url="/docs" if os.getenv("ENV") == "development" else None,
+    redoc_url="/redoc" if os.getenv("ENV") == "development" else None,
     terms_of_service="http://example.com/terms/",
     contact={
         "name": "Ivan Samsonov",
