@@ -27,7 +27,7 @@ class PhotoResponse(PhotoBase):
     def make_absolute_url(cls, value):
         # Преобразуем относительный путь в абсолютный URL используя BASE_URL из настроек
         base_url = settings.BASE_URL
-        return f"{base_url}/static/{value}"
+        return f"{base_url}/api/static/{value}"
     
     class Config:
         from_attributes = True

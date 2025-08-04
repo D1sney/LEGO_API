@@ -79,7 +79,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 app.add_middleware(LoggingMiddleware)
 
 # Подключаем папку static для раздачи файлов
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
 # Настройка CORS
 app.add_middleware(
